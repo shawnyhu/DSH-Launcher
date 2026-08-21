@@ -1,0 +1,44 @@
+name: macOS CI
+
+on:
+  push:
+    paths:
+      - "macos/**"
+      - ".github/workflows/macos-ci.yml"
+  pull_request:
+    paths:
+      - "macos/**"
+      - ".github/workflows/macos-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Core self-check
+        run: macos/Scripts/run-core-tests.sh
+      - name: Build and test Xcode project
+        run: |
+          xcodebuild \
+            -project macos/DSHLauncher.xcodeproj \
+            -scheme DSHLauncher \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            test
+      - name: Build unsigned release-shaped artifacts
+        env:
+          VERSION: 0.2.0
+          ARCH: arm64
+        run: macos/Scripts/build-release.sh
+      - name: Verify platform asset boundary
+        run: |
+          test -f "artifacts/macos/DSHLauncher-Mac-Setup-0.2.0-arm64.pkg"
+          test -f "artifacts/macos/DSHLauncher-Mac-Update-0.2.0-arm64.pkg"
+          ! find artifacts/macos -type f -iname '*windows*' -print -quit | grep -q .

@@ -1,0 +1,97 @@
+name: macOS Release
+
+on:
+  push:
+    tags:
+      - "mac-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate macOS tag and version
+        shell: bash
+        run: |
+          tag='${{ github.ref_name }}'
+          [[ "$tag" =~ ^mac-v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "Unsupported macOS tag: $tag"; exit 1; }
+          version="${BASH_REMATCH[1]}"
+          project_version=$(sed -n 's/.*MARKETING_VERSION = \([^;]*\);.*/\1/p' macos/DSHLauncher.xcodeproj/project.pbxproj | sort -u)
+          [[ "$version" == "$project_version" ]] || { echo "Tag $version != project $project_version"; exit 1; }
+      - name: Import Developer ID certificates
+        shell: bash
+        env:
+          CERTIFICATES_P12_BASE64: ${{ secrets.MACOS_CERTIFICATES_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          test -n "$CERTIFICATES_P12_BASE64"
+          keychain="$RUNNER_TEMP/dsh-launcher.keychain-db"
+          cert="$RUNNER_TEMP/dsh-launcher-certificates.p12"
+          printf '%s' "$CERTIFICATES_P12_BASE64" | /usr/bin/base64 -D > "$cert"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$keychain"
+          security import "$cert" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$keychain"
+      - name: Build signed packages
+        shell: bash
+        env:
+          APP_SIGN_IDENTITY: ${{ secrets.MACOS_APP_SIGN_IDENTITY }}
+          INSTALLER_SIGN_IDENTITY: ${{ secrets.MACOS_INSTALLER_SIGN_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          UPDATE_KEY_ID: ${{ secrets.MACOS_UPDATE_KEY_ID }}
+          UPDATE_SIGNING_KEY_BASE64: ${{ secrets.MACOS_UPDATE_SIGNING_KEY_BASE64 }}
+        run: |
+          version="${GITHUB_REF_NAME#mac-v}"
+          update_key="$RUNNER_TEMP/update-signing-key.raw"
+          printf '%s' "$UPDATE_SIGNING_KEY_BASE64" | /usr/bin/base64 -D > "$update_key"
+          VERSION="$version" ARCH=arm64 UPDATE_SIGNING_KEY="$update_key" macos/Scripts/build-release.sh
+      - name: Notarize, staple, and rebuild signed update metadata
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          UPDATE_KEY_ID: ${{ secrets.MACOS_UPDATE_KEY_ID }}
+          UPDATE_SIGNING_KEY_BASE64: ${{ secrets.MACOS_UPDATE_SIGNING_KEY_BASE64 }}
+        run: |
+          version="${GITHUB_REF_NAME#mac-v}"
+          setup="artifacts/macos/DSHLauncher-Mac-Setup-$version-arm64.pkg"
+          update="artifacts/macos/DSHLauncher-Mac-Update-$version-arm64.pkg"
+          xcrun notarytool submit "$setup" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --wait
+          xcrun stapler staple "$setup"
+          xcrun stapler staple "$update"
+          xcrun stapler validate "$setup"
+          xcrun stapler validate "$update"
+          update_key="$RUNNER_TEMP/update-signing-key.raw"
+          printf '%s' "$UPDATE_SIGNING_KEY_BASE64" | /usr/bin/base64 -D > "$update_key"
+          xcrun swift macos/Scripts/make-update-manifest.swift "$update" "$version" arm64 "$UPDATE_KEY_ID" "$update_key" "$APPLE_TEAM_ID" artifacts/macos
+          xcrun swift macos/Scripts/verify-update-manifest.swift artifacts/macos/update-manifest-macos-arm64.json artifacts/macos/update-manifest-macos-arm64.sig macos/DSHLauncher/Resources/UpdatePublicKeys.json "$update"
+          (cd artifacts/macos && shasum -a 256 DSHLauncher-Mac-Setup-*-arm64.pkg DSHLauncher-Mac-Update-*-arm64.pkg > checksums-macos.txt)
+      - name: Publish macOS-only GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#mac-v}"
+          assets=(
+            "artifacts/macos/DSHLauncher-Mac-Setup-$version-arm64.pkg"
+            "artifacts/macos/DSHLauncher-Mac-Update-$version-arm64.pkg"
+            artifacts/macos/checksums-macos.txt
+            artifacts/macos/update-manifest-macos-arm64.json
+            artifacts/macos/update-manifest-macos-arm64.sig
+          )
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" --generate-notes --title "DSH Launcher for macOS v$version"
+          fi
+      - name: Remove temporary keychain
+        if: always()
+        shell: bash
+        run: security delete-keychain "$RUNNER_TEMP/dsh-launcher.keychain-db" 2>/dev/null || true

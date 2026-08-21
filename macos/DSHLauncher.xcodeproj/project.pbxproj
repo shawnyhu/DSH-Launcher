@@ -1,0 +1,125 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* DSHLauncherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001; };
+		A10000000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002; };
+		A10000000000000000000003 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003; };
+		A10000000000000000000004 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004; };
+		A10000000000000000000005 /* ConfigurationWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005; };
+		A10000000000000000000006 /* LauncherSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006; };
+		A10000000000000000000007 /* AppPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007; };
+		A10000000000000000000008 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008; };
+		A10000000000000000000009 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009; };
+		A1000000000000000000000A /* ConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A; };
+		A1000000000000000000000B /* CommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000B; };
+		A1000000000000000000000C /* NodeDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C; };
+		A1000000000000000000000D /* NpmService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D; };
+		A1000000000000000000000E /* PortService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E; };
+		A1000000000000000000000F /* DSHRuntimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F; };
+		A10000000000000000000010 /* DSHEventMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010; };
+		A10000000000000000000011 /* LoginItemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011; };
+		A10000000000000000000012 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012; };
+		A10000000000000000000013 /* Whale.svg in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013; };
+		A10000000000000000000014 /* SettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015; };
+		A10000000000000000000015 /* VersionAndPathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016; };
+		A10000000000000000000016 /* LauncherUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000019; };
+		A10000000000000000000017 /* UpdatePublicKeys.json in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A; };
+		A10000000000000000000018 /* DSHHomeWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001B; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C10000000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = D10000000000000000000001; proxyType = 1; remoteGlobalIDString = E10000000000000000000001; remoteInfo = DSHLauncher; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		B10000000000000000000001 /* DSHLauncherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHLauncherApp.swift; sourceTree = "<group>"; };
+		B10000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B10000000000000000000003 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		B10000000000000000000004 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
+		B10000000000000000000005 /* ConfigurationWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationWindowController.swift; sourceTree = "<group>"; };
+		B10000000000000000000006 /* LauncherSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherSettings.swift; sourceTree = "<group>"; };
+		B10000000000000000000007 /* AppPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPaths.swift; sourceTree = "<group>"; };
+		B10000000000000000000008 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		B10000000000000000000009 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		B1000000000000000000000A /* ConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationView.swift; sourceTree = "<group>"; };
+		B1000000000000000000000B /* CommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRunner.swift; sourceTree = "<group>"; };
+		B1000000000000000000000C /* NodeDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeDiscoveryService.swift; sourceTree = "<group>"; };
+		B1000000000000000000000D /* NpmService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NpmService.swift; sourceTree = "<group>"; };
+		B1000000000000000000000E /* PortService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortService.swift; sourceTree = "<group>"; };
+		B1000000000000000000000F /* DSHRuntimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHRuntimeService.swift; sourceTree = "<group>"; };
+		B10000000000000000000010 /* DSHEventMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHEventMonitor.swift; sourceTree = "<group>"; };
+		B10000000000000000000011 /* LoginItemService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemService.swift; sourceTree = "<group>"; };
+		B10000000000000000000012 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		B10000000000000000000013 /* Whale.svg */ = {isa = PBXFileReference; lastKnownFileType = image.svg; path = Whale.svg; sourceTree = "<group>"; };
+		B10000000000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000000000000000000015 /* SettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStoreTests.swift; sourceTree = "<group>"; };
+		B10000000000000000000016 /* VersionAndPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionAndPathTests.swift; sourceTree = "<group>"; };
+		B10000000000000000000017 /* DSH Launcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DSH Launcher.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000018 /* DSHLauncherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DSHLauncherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000019 /* LauncherUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherUpdateService.swift; sourceTree = "<group>"; };
+		B1000000000000000000001A /* UpdatePublicKeys.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = UpdatePublicKeys.json; sourceTree = "<group>"; };
+		B1000000000000000000001B /* DSHHomeWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHHomeWatcher.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F10000000000000000000001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		F10000000000000000000002 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D10000000000000000000002 = {isa = PBXGroup; children = (D10000000000000000000003, D10000000000000000000009, D1000000000000000000000A); sourceTree = "<group>"; };
+		D10000000000000000000003 /* DSHLauncher */ = {isa = PBXGroup; children = (D10000000000000000000004, D10000000000000000000005, D10000000000000000000006, D10000000000000000000007, D10000000000000000000008, D1000000000000000000000B); path = DSHLauncher; sourceTree = "<group>"; };
+		D10000000000000000000004 /* App */ = {isa = PBXGroup; children = (B10000000000000000000001, B10000000000000000000002, B10000000000000000000003, B10000000000000000000004, B10000000000000000000005); path = App; sourceTree = "<group>"; };
+		D10000000000000000000005 /* Models */ = {isa = PBXGroup; children = (B10000000000000000000006); path = Models; sourceTree = "<group>"; };
+		D10000000000000000000006 /* Infrastructure */ = {isa = PBXGroup; children = (B10000000000000000000007, B10000000000000000000008, B10000000000000000000009); path = Infrastructure; sourceTree = "<group>"; };
+		D10000000000000000000007 /* Views */ = {isa = PBXGroup; children = (B1000000000000000000000A); path = Views; sourceTree = "<group>"; };
+		D10000000000000000000008 /* Services */ = {isa = PBXGroup; children = (B1000000000000000000000B, B1000000000000000000000C, B1000000000000000000000D, B1000000000000000000000E, B1000000000000000000000F, B10000000000000000000010, B10000000000000000000011, B10000000000000000000012, B10000000000000000000019, B1000000000000000000001B); path = Services; sourceTree = "<group>"; };
+		D10000000000000000000009 /* Tests */ = {isa = PBXGroup; children = (B10000000000000000000015, B10000000000000000000016); path = DSHLauncherTests; sourceTree = "<group>"; };
+		D1000000000000000000000A /* Products */ = {isa = PBXGroup; children = (B10000000000000000000017, B10000000000000000000018); name = Products; sourceTree = "<group>"; };
+		D1000000000000000000000B /* Resources */ = {isa = PBXGroup; children = (B10000000000000000000013, B10000000000000000000014, B1000000000000000000001A); path = Resources; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E10000000000000000000001 /* DSHLauncher */ = {isa = PBXNativeTarget; buildConfigurationList = E10000000000000000000011; buildPhases = (F10000000000000000000011, F10000000000000000000001, F10000000000000000000012); buildRules = (); dependencies = (); name = DSHLauncher; productName = "DSH Launcher"; productReference = B10000000000000000000017; productType = "com.apple.product-type.application"; };
+		E10000000000000000000002 /* DSHLauncherTests */ = {isa = PBXNativeTarget; buildConfigurationList = E10000000000000000000012; buildPhases = (F10000000000000000000013, F10000000000000000000002); buildRules = (); dependencies = (C10000000000000000000002); name = DSHLauncherTests; productName = DSHLauncherTests; productReference = B10000000000000000000018; productType = "com.apple.product-type.bundle.unit-test"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D10000000000000000000001 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {E10000000000000000000001 = {CreatedOnToolsVersion = 16.0; }; E10000000000000000000002 = {CreatedOnToolsVersion = 16.0; TestTargetID = E10000000000000000000001; };};}; buildConfigurationList = E10000000000000000000010; compatibilityVersion = "Xcode 15.0"; developmentRegion = en; knownRegions = (en, Base, zh_CN); mainGroup = D10000000000000000000002; productRefGroup = D1000000000000000000000A; projectDirPath = ""; projectRoot = ""; targets = (E10000000000000000000001, E10000000000000000000002); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F10000000000000000000012 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000013,A10000000000000000000017); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F10000000000000000000011 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001,A10000000000000000000002,A10000000000000000000003,A10000000000000000000004,A10000000000000000000005,A10000000000000000000006,A10000000000000000000007,A10000000000000000000008,A10000000000000000000009,A1000000000000000000000A,A1000000000000000000000B,A1000000000000000000000C,A1000000000000000000000D,A1000000000000000000000E,A1000000000000000000000F,A10000000000000000000010,A10000000000000000000011,A10000000000000000000012,A10000000000000000000016,A10000000000000000000018); runOnlyForDeploymentPostprocessing = 0; };
+		F10000000000000000000013 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000014,A10000000000000000000015); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C10000000000000000000002 = {isa = PBXTargetDependency; target = E10000000000000000000001; targetProxy = C10000000000000000000001; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		E10000000000000000000020 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 13.0; SWIFT_VERSION = 6.0;}; name = Debug; };
+		E10000000000000000000021 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 13.0; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 6.0;}; name = Release; };
+		E10000000000000000000022 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = DSHLauncher/Resources/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MACOSX_DEPLOYMENT_TARGET = 13.0; MARKETING_VERSION = 0.2.0; PRODUCT_BUNDLE_IDENTIFIER = com.shawnyhu.dshlauncher; PRODUCT_NAME = "DSH Launcher"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0;}; name = Debug; };
+		E10000000000000000000023 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Manual; CURRENT_PROJECT_VERSION = 1; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = DSHLauncher/Resources/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MACOSX_DEPLOYMENT_TARGET = 13.0; MARKETING_VERSION = 0.2.0; PRODUCT_BUNDLE_IDENTIFIER = com.shawnyhu.dshlauncher; PRODUCT_NAME = "DSH Launcher"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0;}; name = Release; };
+		E10000000000000000000024 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.shawnyhu.dshlauncher.tests; SWIFT_VERSION = 6.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DSH Launcher.app/Contents/MacOS/DSH Launcher";}; name = Debug; };
+		E10000000000000000000025 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.shawnyhu.dshlauncher.tests; SWIFT_VERSION = 6.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DSH Launcher.app/Contents/MacOS/DSH Launcher";}; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E10000000000000000000010 = {isa = XCConfigurationList; buildConfigurations = (E10000000000000000000020,E10000000000000000000021); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		E10000000000000000000011 = {isa = XCConfigurationList; buildConfigurations = (E10000000000000000000022,E10000000000000000000023); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		E10000000000000000000012 = {isa = XCConfigurationList; buildConfigurations = (E10000000000000000000024,E10000000000000000000025); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = D10000000000000000000001;
+}

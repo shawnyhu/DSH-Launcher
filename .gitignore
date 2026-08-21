@@ -15,3 +15,14 @@ TestResults/
 coverage/
 .DS_Store
 Thumbs.db
+
+# macOS / Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcarchive
+macos/.build/
+macos/build/
+macos/*.pkg
+macos/*.dmg
+macos/Packaging/private/

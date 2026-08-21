@@ -9,9 +9,11 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的桌面安装、启�
 | 平台 | 状态 | Release 标签 |
 |---|---|---|
 | Windows 10/11 x64 | `0.1.9` 可用 | `win-v*` |
-| macOS | 开发准备阶段 | `mac-v*` |
+| macOS 13+ Apple Silicon | `0.2.0` 本地可用版本 | `mac-v*` |
 
 Windows 与 macOS 使用同一个 GitHub 仓库，并从 `0.2.0` 起共用产品版本号；平台标签、Release、安装包和更新通道保持独立。完整跨平台规格见 [`项目说明.md`](项目说明.md)。
+
+macOS 版采用原生 SwiftUI/AppKit 菜单栏体验，源码、缓存、配置、构建产物和发布工作流均与 Windows 版隔离。构建和本地安装说明见 [`macos/README.md`](macos/README.md)。
 
 ## Windows 功能
 
