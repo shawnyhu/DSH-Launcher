@@ -290,26 +290,57 @@ internal sealed class TrayApplicationContext : ApplicationContext
                     $"将当前 DSH 从 {selected.InstalledVersion} 更新到 {latest}？\r\n" +
                     $"官方发布时间：{releaseTime}\r\n\r\n" +
                     selected.InstallRoot,
-                    "\u68C0\u67E5\u5E76\u66F4\u65B0\u5F53\u524D DSH",
+                    "检查并更新当前 DSH",
                     MessageBoxButtons.OKCancel,
                     MessageBoxIcon.Question) != DialogResult.OK)
             {
                 return;
             }
 
+            using var progressWindow =
+                new UpdateProgressForm("正在更新 DSH");
+            progressWindow.ShowFor();
+            progressWindow.Report(new OperationProgress(
+                $"正在准备从 {selected.InstalledVersion} 更新到 {latest}…",
+                5,
+                selected.InstallRoot));
+
             var wasRunning = _runtime.OwnsRunningProcess;
             if (wasRunning)
             {
+                progressWindow.Report(new OperationProgress(
+                    "正在停止当前 DSH…",
+                    15,
+                    selected.InstallRoot));
                 _homeWatcher.Stop();
                 await _runtime.StopAsync();
             }
+
+            progressWindow.Report(new OperationProgress(
+                $"正在安装 DSH {latest}…",
+                Detail: selected.InstallRoot));
+            var npmProgress = new Progress<string>(message =>
+                progressWindow.Report(new OperationProgress(
+                    message,
+                    Detail: selected.InstallRoot)));
             var originalId = selected.Id;
             var updated = await _npm.UpdateToAsync(
                 selected,
-                latest);
+                latest,
+                npmProgress);
             updated.Id = originalId;
-            var index = _settings.Installations.FindIndex(item => item.Id == originalId);
-            if (index >= 0) _settings.Installations[index] = updated;
+
+            progressWindow.Report(new OperationProgress(
+                "正在保存 Launcher 配置…",
+                80,
+                updated.InstallRoot));
+            var index = _settings.Installations.FindIndex(
+                item => item.Id == originalId);
+            if (index >= 0)
+            {
+                _settings.Installations[index] = updated;
+            }
+
             await _store.SaveAsync(_settings);
             RefreshMenu();
             if (wasRunning)
@@ -317,6 +348,9 @@ internal sealed class TrayApplicationContext : ApplicationContext
                 var home = _settings.SelectedHome;
                 if (home is not null)
                 {
+                    progressWindow.Report(new OperationProgress(
+                        "正在重新启动 DSH…",
+                        Detail: $"端口 {_settings.Port}"));
                     _events.Start(_settings.Port);
                     await _runtime.StartAsync(
                         updated,
@@ -325,12 +359,20 @@ internal sealed class TrayApplicationContext : ApplicationContext
                         _settings.Port);
                     if (_runtime.OwnsRunningProcess)
                     {
-                        _homeWatcher.Start(home, updated.InstalledVersion);
+                        _homeWatcher.Start(
+                            home,
+                            updated.InstalledVersion);
                     }
                 }
             }
+
+            progressWindow.Report(new OperationProgress(
+                $"DSH {updated.InstalledVersion} 更新完成。",
+                100,
+                updated.InstallRoot));
+            progressWindow.CloseWhenFinished();
             MessageBox.Show(
-                $"\u5DF2\u66F4\u65B0\u5230 DSH {updated.InstalledVersion}\u3002",
+                $"已更新到 DSH {updated.InstalledVersion}。",
                 "DSH Launcher",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
@@ -339,7 +381,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private async Task UpdateLauncherAsync()
     {
-        if (string.IsNullOrWhiteSpace(_settings.LauncherUpdateRepository))
+        if (string.IsNullOrWhiteSpace(
+                _settings.LauncherUpdateRepository))
         {
             MessageBox.Show(
                 "请先在“配置 → 启动设置”中填写 Launcher GitHub 仓库。",
@@ -354,7 +397,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
         await RunOperationAsync(async () =>
         {
             using var service = new LauncherUpdateService(_log);
-            var release = await service.GetLatestAsync(_settings.LauncherUpdateRepository);
+            var release = await service.GetLatestAsync(
+                _settings.LauncherUpdateRepository);
             if (release.Version <= LauncherUpdateService.CurrentVersion)
             {
                 MessageBox.Show(
@@ -366,7 +410,9 @@ internal sealed class TrayApplicationContext : ApplicationContext
             }
 
             if (MessageBox.Show(
-                    $"发现 Launcher {release.Tag}。\r\n\r\n{release.Name}\r\n\r\n下载并安装轻量更新包？",
+                    $"发现 Launcher {release.Tag}。\r\n\r\n" +
+                    $"{release.Name}\r\n\r\n" +
+                    "下载并安装轻量更新包？",
                     "检查 Launcher 更新",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question) != DialogResult.Yes)
@@ -374,7 +420,17 @@ internal sealed class TrayApplicationContext : ApplicationContext
                 return;
             }
 
-            updaterPath = await service.DownloadAsync(release);
+            using var progressWindow =
+                new UpdateProgressForm("正在更新 DSH Launcher");
+            progressWindow.ShowFor();
+            updaterPath = await service.DownloadAsync(
+                release,
+                progressWindow);
+            progressWindow.Report(new OperationProgress(
+                "正在启动 Launcher 更新程序…",
+                100,
+                release.AssetName));
+            progressWindow.CloseWhenFinished();
         });
 
         if (updaterPath is null)
@@ -382,7 +438,10 @@ internal sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
-        Process.Start(new ProcessStartInfo(updaterPath) { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo(updaterPath)
+        {
+            UseShellExecute = true
+        });
         await ExitAsync();
     }
 

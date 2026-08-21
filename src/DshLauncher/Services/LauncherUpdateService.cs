@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Reflection;
 using DshLauncher.Infrastructure;
+using DshLauncher.Models;
 
 namespace DshLauncher.Services;
 
@@ -82,6 +83,7 @@ internal sealed class LauncherUpdateService : IDisposable
 
     public async Task<string> DownloadAsync(
         LauncherRelease release,
+        IProgress<OperationProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         var directory = Path.Combine(
@@ -91,32 +93,153 @@ internal sealed class LauncherUpdateService : IDisposable
         Directory.CreateDirectory(directory);
         var destination = Path.Combine(directory, release.AssetName);
         var temporary = destination + ".download";
-        using var response = await _http.GetAsync(
-            release.DownloadUrl,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
-        await using (var target = new FileStream(
-            temporary,
-            FileMode.Create,
-            FileAccess.Write,
-            FileShare.None))
+        progress?.Report(new OperationProgress(
+            "正在连接 GitHub 下载服务器…",
+            Detail: release.AssetName));
+
+        try
         {
-            await source.CopyToAsync(target, cancellationToken);
+            using var response = await _http.GetAsync(
+                release.DownloadUrl,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            response.EnsureSuccessStatusCode();
+            var total = response.Content.Headers.ContentLength;
+            if ((!total.HasValue || total.Value <= 0) &&
+                release.AssetSize > 0)
+            {
+                total = release.AssetSize;
+            }
+
+            await using var source =
+                await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using var target = new FileStream(
+                temporary,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 81920,
+                useAsync: true);
+            await CopyDownloadAsync(
+                source,
+                target,
+                total,
+                release.AssetName,
+                progress,
+                cancellationToken);
+            await target.FlushAsync(cancellationToken);
+
+            var length = new FileInfo(temporary).Length;
+            if (release.AssetSize > 0 && length != release.AssetSize)
+            {
+                throw new InvalidDataException(
+                    $"Downloaded updater size mismatch. " +
+                    $"Expected {release.AssetSize}; got {length}.");
+            }
+
+            File.Move(temporary, destination, true);
+            progress?.Report(new OperationProgress(
+                "Launcher 更新包下载完成。",
+                100,
+                DownloadDetail(length, total, release.AssetName)));
+            _log.Info(
+                $"Downloaded Launcher update {release.Tag}: {destination}");
+            return destination;
+        }
+        catch
+        {
+            try
+            {
+                if (File.Exists(temporary))
+                {
+                    File.Delete(temporary);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+
+            throw;
+        }
+    }
+
+    internal static async Task CopyDownloadAsync(
+        Stream source,
+        Stream target,
+        long? total,
+        string assetName,
+        IProgress<OperationProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var buffer = new byte[81920];
+        long downloaded = 0;
+        var lastReport = DateTimeOffset.MinValue;
+
+        while (true)
+        {
+            var read = await source.ReadAsync(
+                buffer.AsMemory(),
+                cancellationToken);
+            if (read == 0)
+            {
+                break;
+            }
+
+            await target.WriteAsync(
+                buffer.AsMemory(0, read),
+                cancellationToken);
+            downloaded += read;
+            var now = DateTimeOffset.UtcNow;
+            if (now - lastReport < TimeSpan.FromMilliseconds(100) &&
+                (!total.HasValue || downloaded < total.Value))
+            {
+                continue;
+            }
+
+            progress?.Report(new OperationProgress(
+                "正在下载 Launcher 更新包…",
+                CalculateDownloadPercentage(downloaded, total),
+                DownloadDetail(
+                    downloaded,
+                    total,
+                    assetName)));
+            lastReport = now;
+        }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        const double megabyte = 1024 * 1024;
+        return bytes >= megabyte
+            ? $"{bytes / megabyte:0.0} MB"
+            : $"{bytes / 1024d:0.0} KB";
+    }
+
+    private static string DownloadDetail(
+        long downloaded,
+        long? total,
+        string assetName) =>
+        total.HasValue && total.Value > 0
+            ? $"{FormatBytes(downloaded)} / " +
+              $"{FormatBytes(total.Value)}  ·  {assetName}"
+            : $"{FormatBytes(downloaded)}  ·  {assetName}";
+
+    internal static int? CalculateDownloadPercentage(
+        long downloaded,
+        long? total)
+    {
+        if (!total.HasValue || total.Value <= 0)
+        {
+            return null;
         }
 
-        var length = new FileInfo(temporary).Length;
-        if (release.AssetSize > 0 && length != release.AssetSize)
-        {
-            File.Delete(temporary);
-            throw new InvalidDataException(
-                $"Downloaded updater size mismatch. Expected {release.AssetSize}; got {length}.");
-        }
-
-        File.Move(temporary, destination, true);
-        _log.Info($"Downloaded Launcher update {release.Tag}: {destination}");
-        return destination;
+        return (int)Math.Clamp(
+            downloaded * 100L / total.Value,
+            0,
+            100);
     }
 
     public static void CleanupDownloadedUpdates(AppLogger log)

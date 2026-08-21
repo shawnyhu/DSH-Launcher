@@ -17,6 +17,7 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的 Windows 安装、�
 - 全局 npm 安装作为默认方式。
 - 在用户选择的独立目录中安装多个指定版本。
 - 更新、重装和卸载所选 DSH 实例。
+- 更新 DSH 和 Launcher 时显示独立进度窗口。
 - 按 DSH 官方 GitHub Release 发布时间选择最新的可安装版本。
 - 管理多个 DSH_HOME，记录 Launcher 观察到的最后写入版本。
 - 配置端口、工作目录、浏览器启动行为和开机自启。
@@ -25,7 +26,7 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的 Windows 安装、�
 
 ## 一键安装
 
-运行 `DSHLauncher-Setup-0.1.6-x64.exe`。
+运行 `DSHLauncher-Setup-0.1.7-x64.exe`。
 
 安装器会请求管理员权限，并默认把 Launcher 安装到 `C:\Program Files\DSH Launcher`。安装器会检查 Node.js；缺少兼容版本时安装 Node.js 24 LTS。随后默认全局安装最新的 `@deepseek-ai/dsh`，也允许改为 Launcher 管理的独立目录。安装过程中会单独选择 DSH_HOME，默认路径为 `%USERPROFILE%\.dsh`，可以手动修改。
 
@@ -33,7 +34,9 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的 Windows 安装、�
 
 ## 只更新 Launcher
 
-已经安装过 DSH Launcher 时，可以运行 `DSHLauncher-Update-0.1.6-x64.exe`。该轻量更新包只替换 Launcher 主程序，不安装 Node.js、不修改 DSH 程序包，也不更改 DSH_HOME 和现有配置。更新完成后请手动重新启动 Launcher；启动成功后会删除 `%TEMP%\DSHLauncher` 中已经下载的更新包。
+已经安装过 DSH Launcher 时，可以运行 `DSHLauncher-Update-0.1.7-x64.exe`。该轻量更新包只替换 Launcher 主程序，不安装 Node.js、不修改 DSH 程序包，也不更改 DSH_HOME 和现有配置。更新完成后请手动重新启动 Launcher；启动成功后会删除 `%TEMP%\DSHLauncher` 中已经下载的更新包。
+
+Launcher 更新包下载时显示已下载大小、总大小和百分比；GitHub 未提供总大小时自动使用动态进度条。
 
 托盘菜单“检查 Launcher 更新”默认查询 [`shawnyhu/DSH-Launcher`](https://github.com/shawnyhu/DSH-Launcher) 的 Latest Release，寻找名称符合 `DSHLauncher-Update-*-x64.exe` 的资产。更新仓库可以在“配置 → 启动设置”中修改。该功能使用 GitHub 官方 Latest Release 链接，不需要 GitHub Token，也不会消耗匿名 REST API 额度。
 
@@ -62,7 +65,7 @@ D:\DSH Versions\0.1.0-rc.8
 
 在“配置 → DSH 版本 → 安装版本”中可以查询 npm 上所有版本、搜索版本号、选择安装范围和路径。
 
-托盘菜单“检查并更新当前 DSH”操作当前运行配置选择的安装实例。配置窗口中的更新按钮操作列表里选中的实例。Launcher 按 DSH 官方 GitHub Release 的发布时间选择 npm 中已经存在的最新包；GitHub Releases API 限流时使用官方 Atom Feed，两者都不可用时按 npm 发布时间回退，并且不会把较晚发布的当前版本降级。
+托盘菜单“检查并更新当前 DSH”操作当前运行配置选择的安装实例。DSH 更新期间会显示停止、安装、保存和重启阶段；npm 执行期间使用动态进度条。配置窗口中的更新按钮操作列表里选中的实例。Launcher 按 DSH 官方 GitHub Release 的发布时间选择 npm 中已经存在的最新包；GitHub Releases API 限流时使用官方 Atom Feed，两者都不可用时按 npm 发布时间回退，并且不会把较晚发布的当前版本降级。
 
 ## 数据和卸载
 
@@ -98,8 +101,8 @@ D:\DSH Versions\0.1.0-rc.8
 
 ```text
 artifacts\app\DshLauncher.exe
-artifacts\installer\DSHLauncher-Setup-0.1.6-x64.exe
-artifacts\updater\DSHLauncher-Update-0.1.6-x64.exe
+artifacts\installer\DSHLauncher-Setup-0.1.7-x64.exe
+artifacts\updater\DSHLauncher-Update-0.1.7-x64.exe
 ```
 
 只发布应用：

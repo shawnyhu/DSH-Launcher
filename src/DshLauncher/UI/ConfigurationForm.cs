@@ -300,8 +300,16 @@ internal sealed class ConfigurationForm : Form
 
     private async Task UpdateSelectedAsync()
     {
-        if (_installations.SelectedItem is not DshInstallation selected) return;
-        if (!await EnsurePackageMutationAllowedAsync()) return;
+        if (_installations.SelectedItem is not DshInstallation selected)
+        {
+            return;
+        }
+
+        if (!await EnsurePackageMutationAllowedAsync())
+        {
+            return;
+        }
+
         try
         {
             SetBusy(true);
@@ -331,31 +339,76 @@ internal sealed class ConfigurationForm : Form
                 .ToLocalTime()
                 .ToString("yyyy-MM-dd HH:mm") ?? "未知";
             if (MessageBox.Show(
-                this,
-                $"将所选 DSH 从 {selected.InstalledVersion} 更新到 {latest}？\r\n" +
-                $"官方发布时间：{releaseTime}\r\n\r\n" +
-                selected.InstallRoot,
-                "\u68C0\u67E5\u5E76\u66F4\u65B0\u6240\u9009 DSH",
-                MessageBoxButtons.OKCancel,
-                MessageBoxIcon.Question) != DialogResult.OK) return;
-            if (_runtime.OwnsRunningProcess && selected.Id == _settings.SelectedInstallationId)
+                    this,
+                    $"将所选 DSH 从 {selected.InstalledVersion} 更新到 {latest}？\r\n" +
+                    $"官方发布时间：{releaseTime}\r\n\r\n" +
+                    selected.InstallRoot,
+                    "检查并更新所选 DSH",
+                    MessageBoxButtons.OKCancel,
+                    MessageBoxIcon.Question) != DialogResult.OK)
             {
+                return;
+            }
+
+            using var progressWindow =
+                new UpdateProgressForm("正在更新 DSH");
+            progressWindow.ShowFor(this);
+            progressWindow.Report(new OperationProgress(
+                $"正在准备从 {selected.InstalledVersion} 更新到 {latest}…",
+                5,
+                selected.InstallRoot));
+
+            if (_runtime.OwnsRunningProcess &&
+                selected.Id == _settings.SelectedInstallationId)
+            {
+                progressWindow.Report(new OperationProgress(
+                    "正在停止当前 DSH…",
+                    15,
+                    selected.InstallRoot));
                 await _runtime.StopAsync();
             }
 
+            progressWindow.Report(new OperationProgress(
+                $"正在安装 DSH {latest}…",
+                Detail: selected.InstallRoot));
+            var npmProgress = new Progress<string>(message =>
+                progressWindow.Report(new OperationProgress(
+                    message,
+                    Detail: selected.InstallRoot)));
             var originalId = selected.Id;
             var updated = await _npm.UpdateToAsync(
                 selected,
-                latest);
+                latest,
+                npmProgress);
             updated.Id = originalId;
+
+            progressWindow.Report(new OperationProgress(
+                "正在保存 Launcher 配置…",
+                85,
+                updated.InstallRoot));
             ReplaceInstallation(originalId, updated);
             await _store.SaveAsync(_settings);
             RefreshInstallations();
-            MessageBox.Show(this, $"\u5DF2\u66F4\u65B0\u5230 DSH {updated.InstalledVersion}\u3002", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            progressWindow.Report(new OperationProgress(
+                $"DSH {updated.InstalledVersion} 更新完成。",
+                100,
+                updated.InstallRoot));
+            progressWindow.CloseWhenFinished();
+            MessageBox.Show(
+                this,
+                $"已更新到 DSH {updated.InstalledVersion}。",
+                Text,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
         catch (Exception error)
         {
-            MessageBox.Show(this, error.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(
+                this,
+                error.Message,
+                Text,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
         finally
         {
