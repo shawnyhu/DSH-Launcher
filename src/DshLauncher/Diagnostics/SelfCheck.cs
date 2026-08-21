@@ -52,7 +52,7 @@ internal static class SelfCheck
             var global = await npm.DiscoverGlobalAsync();
             if (global is null)
             {
-                failures.Add("Global DSH was not found.");
+                Console.WriteLine("[INFO] Global DSH is not installed; package discovery was skipped.");
             }
             else
             {
@@ -63,7 +63,7 @@ internal static class SelfCheck
         }
         catch (Exception error)
         {
-            failures.Add("Global DSH discovery: " + error.Message);
+            Console.WriteLine("[INFO] Global DSH discovery is unavailable: " + error.Message);
         }
 
         try

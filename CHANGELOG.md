@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 - 2026-08-21
+
+- Allow build self-checks on clean machines before DSH is installed.
+- Validate the GitHub Releases build and publishing pipeline.
+
 ## 0.1.1 - 2026-08-21
 
 - Fix configuration window construction at narrow widths.
