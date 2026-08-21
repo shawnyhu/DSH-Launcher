@@ -1,5 +1,9 @@
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Xml;
+using System.Xml.Linq;
 using DshLauncher.Infrastructure;
 using DshLauncher.Models;
 
@@ -16,6 +20,14 @@ internal sealed record LauncherRelease(
 
 internal sealed class LauncherUpdateService : IDisposable
 {
+    private static readonly Version LegacyTagMaximum = new(0, 1, 8);
+    private static readonly Regex WindowsTagPattern = new(
+        "^win-v(?<version>[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex LegacyTagPattern = new(
+        "^v(?<version>[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     private readonly HttpClient _http;
     private readonly AppLogger _log;
 
@@ -25,6 +37,9 @@ internal sealed class LauncherUpdateService : IDisposable
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
         _http.DefaultRequestHeaders.UserAgent.Add(
             new ProductInfoHeaderValue("DSHLauncher", CurrentVersion.ToString()));
+        _http.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        _http.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
     }
 
     public static Version CurrentVersion =>
@@ -44,42 +59,258 @@ internal sealed class LauncherUpdateService : IDisposable
         CancellationToken cancellationToken = default)
     {
         var slug = NormalizeRepository(repository);
-        var latestUrl = $"https://github.com/{slug}/releases/latest";
-        using var response = await _http.GetAsync(
-            latestUrl,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var pageUri = response.RequestMessage?.RequestUri ?? new Uri(latestUrl);
-        const string marker = "/releases/tag/";
-        var markerIndex = pageUri.AbsolutePath.IndexOf(
-            marker,
-            StringComparison.OrdinalIgnoreCase);
-        if (markerIndex < 0)
+        try
         {
-            throw new InvalidDataException(
-                "GitHub did not redirect the latest release link to a version tag.");
+            return await GetLatestFromApiAsync(slug, cancellationToken);
+        }
+        catch (TaskCanceledException)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            _log.Info(
+                "Launcher GitHub Releases API timed out; " +
+                "using the official Atom feed.");
+        }
+        catch (Exception error)
+            when (error is HttpRequestException or JsonException)
+        {
+            _log.Info(
+                "Launcher GitHub Releases API is unavailable; " +
+                "using the official Atom feed: " + error.Message);
         }
 
-        var encodedTag = pageUri.AbsolutePath[(markerIndex + marker.Length)..].Trim('/');
-        var tag = Uri.UnescapeDataString(encodedTag);
-        var version = ParseVersion(tag);
-        var versionText = version.Build >= 0 ? version.ToString(3) : version.ToString();
-        var assetName = $"DSHLauncher-Update-{versionText}-x64.exe";
-        var downloadUrl =
-            $"https://github.com/{slug}/releases/download/" +
-            $"{Uri.EscapeDataString(tag)}/{Uri.EscapeDataString(assetName)}";
-
-        return new LauncherRelease(
-            tag,
-            tag,
-            version,
-            pageUri.ToString(),
-            assetName,
-            downloadUrl,
-            0);
+        try
+        {
+            return await GetLatestFromFeedAsync(slug, cancellationToken);
+        }
+        catch (TaskCanceledException error)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            throw UpdateChannelUnavailable(error);
+        }
+        catch (Exception error)
+            when (error is HttpRequestException or XmlException)
+        {
+            throw UpdateChannelUnavailable(error);
+        }
     }
+
+    private async Task<LauncherRelease> GetLatestFromApiAsync(
+        string slug,
+        CancellationToken cancellationToken)
+    {
+        var url = $"https://api.github.com/repos/{slug}/releases?per_page=50";
+        using var response = await _http.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        await using var stream =
+            await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(
+            stream,
+            cancellationToken: cancellationToken);
+        var candidates = new List<LauncherRelease>();
+
+        foreach (var release in document.RootElement.EnumerateArray())
+        {
+            if (release.TryGetProperty("draft", out var draft) &&
+                draft.GetBoolean())
+            {
+                continue;
+            }
+
+            if (!release.TryGetProperty("tag_name", out var tagNode) ||
+                !TryParseWindowsReleaseTag(
+                    tagNode.GetString(),
+                    out var version,
+                    out var legacy))
+            {
+                continue;
+            }
+
+            var tag = tagNode.GetString()!;
+            var assetName = WindowsAssetName(version, legacy);
+            if (!release.TryGetProperty("assets", out var assets))
+            {
+                continue;
+            }
+
+            JsonElement? matchingAsset = null;
+            foreach (var asset in assets.EnumerateArray())
+            {
+                if (asset.TryGetProperty("name", out var assetNameNode) &&
+                    string.Equals(
+                        assetNameNode.GetString(),
+                        assetName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    matchingAsset = asset;
+                    break;
+                }
+            }
+
+            if (!matchingAsset.HasValue ||
+                !matchingAsset.Value.TryGetProperty(
+                    "browser_download_url",
+                    out var downloadNode) ||
+                string.IsNullOrWhiteSpace(downloadNode.GetString()))
+            {
+                continue;
+            }
+
+            var name = release.TryGetProperty("name", out var nameNode) &&
+                       !string.IsNullOrWhiteSpace(nameNode.GetString())
+                ? nameNode.GetString()!
+                : tag;
+            var pageUrl = release.TryGetProperty(
+                    "html_url",
+                    out var pageNode)
+                ? pageNode.GetString() ??
+                  $"https://github.com/{slug}/releases/tag/{tag}"
+                : $"https://github.com/{slug}/releases/tag/{tag}";
+            var size = matchingAsset.Value.TryGetProperty(
+                    "size",
+                    out var sizeNode) &&
+                       sizeNode.TryGetInt64(out var assetSize)
+                ? assetSize
+                : 0;
+            candidates.Add(new LauncherRelease(
+                tag,
+                name,
+                version,
+                pageUrl,
+                assetName,
+                downloadNode.GetString()!,
+                size));
+        }
+
+        return SelectLatest(candidates);
+    }
+
+    private async Task<LauncherRelease> GetLatestFromFeedAsync(
+        string slug,
+        CancellationToken cancellationToken)
+    {
+        var url = $"https://github.com/{slug}/releases.atom";
+        using var response = await _http.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync(
+            cancellationToken);
+        var document = XDocument.Parse(content);
+        XNamespace atom = "http://www.w3.org/2005/Atom";
+        var candidates = new List<LauncherRelease>();
+
+        foreach (var entry in document.Descendants(atom + "entry"))
+        {
+            var pageUrl = entry.Elements(atom + "link")
+                .Select(link => link.Attribute("href")?.Value)
+                .FirstOrDefault(value => value?.Contains(
+                    "/releases/tag/",
+                    StringComparison.OrdinalIgnoreCase) == true);
+            if (string.IsNullOrWhiteSpace(pageUrl))
+            {
+                continue;
+            }
+
+            var tag = TagFromReleaseUrl(pageUrl);
+            if (!TryParseWindowsReleaseTag(
+                    tag,
+                    out var version,
+                    out var legacy))
+            {
+                continue;
+            }
+
+            var assetName = WindowsAssetName(version, legacy);
+            var downloadUrl =
+                $"https://github.com/{slug}/releases/download/" +
+                $"{Uri.EscapeDataString(tag)}/" +
+                Uri.EscapeDataString(assetName);
+            candidates.Add(new LauncherRelease(
+                tag,
+                entry.Element(atom + "title")?.Value ?? tag,
+                version,
+                pageUrl,
+                assetName,
+                downloadUrl,
+                0));
+        }
+
+        return SelectLatest(candidates);
+    }
+
+    private static LauncherRelease SelectLatest(
+        IEnumerable<LauncherRelease> candidates) =>
+        candidates.OrderByDescending(item => item.Version).FirstOrDefault()
+        ?? throw new InvalidDataException(
+            "没有找到带 win-v 标签和 Windows x64 更新包的 Launcher Release。");
+
+    internal static bool TryParseWindowsReleaseTag(
+        string? tag,
+        out Version version,
+        out bool legacy)
+    {
+        version = new Version(0, 0);
+        legacy = false;
+        if (string.IsNullOrWhiteSpace(tag))
+        {
+            return false;
+        }
+
+        var match = WindowsTagPattern.Match(tag.Trim());
+        if (!match.Success)
+        {
+            match = LegacyTagPattern.Match(tag.Trim());
+            legacy = match.Success;
+        }
+
+        if (!match.Success ||
+            !Version.TryParse(
+                match.Groups["version"].Value,
+                out var parsed))
+        {
+            legacy = false;
+            return false;
+        }
+
+        if (legacy && parsed > LegacyTagMaximum)
+        {
+            legacy = false;
+            return false;
+        }
+
+        version = parsed;
+        return true;
+    }
+
+    internal static string WindowsAssetName(
+        Version version,
+        bool legacy)
+    {
+        var versionText = VersionText(version);
+        return legacy
+            ? $"DSHLauncher-Update-{versionText}-x64.exe"
+            : $"DSHLauncher-Windows-Update-{versionText}-x64.exe";
+    }
+
+    private static string TagFromReleaseUrl(string pageUrl)
+    {
+        const string marker = "/releases/tag/";
+        var index = pageUrl.LastIndexOf(
+            marker,
+            StringComparison.OrdinalIgnoreCase);
+        return index < 0
+            ? string.Empty
+            : Uri.UnescapeDataString(pageUrl[(index + marker.Length)..])
+                .Trim('/');
+    }
+
+    private static string VersionText(Version version) =>
+        version.Build >= 0 ? version.ToString(3) : version.ToString();
+
+    private static InvalidOperationException UpdateChannelUnavailable(
+        Exception error) =>
+        new(
+            "无法读取 Windows Launcher 更新通道。" +
+            "请检查网络连接后重试。",
+            error);
 
     public async Task<string> DownloadAsync(
         LauncherRelease release,
@@ -313,14 +544,6 @@ internal sealed class LauncherUpdateService : IDisposable
         }
 
         return Uri.EscapeDataString(segments[0]) + "/" + Uri.EscapeDataString(segments[1]);
-    }
-
-    private static Version ParseVersion(string value)
-    {
-        var numeric = value.Trim().TrimStart('v', 'V').Split('-', 2)[0];
-        return Version.TryParse(numeric, out var version)
-            ? version
-            : throw new FormatException($"GitHub release tag is not a supported version: {value}");
     }
 
     public void Dispose() => _http.Dispose();

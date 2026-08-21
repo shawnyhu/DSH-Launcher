@@ -1,5 +1,5 @@
 #define AppName "DSH Launcher Update"
-#define AppVersion "0.1.7"
+#define AppVersion "0.1.8"
 #define RepoRoot AddBackslash(SourcePath) + ".."
 
 [Setup]
@@ -12,7 +12,7 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#RepoRoot}\artifacts\updater
-OutputBaseFilename=DSHLauncher-Update-{#AppVersion}-x64
+OutputBaseFilename=DSHLauncher-Windows-Update-{#AppVersion}-x64
 SetupIconFile={#RepoRoot}\src\DshLauncher\Assets\whale.ico
 Compression=lzma2/ultra64
 SolidCompression=yes

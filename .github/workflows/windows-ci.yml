@@ -1,4 +1,4 @@
-name: CI
+name: Windows CI
 
 on:
   push:
@@ -23,3 +23,6 @@ jobs:
       - name: Build
         shell: pwsh
         run: dotnet build src/DshLauncher/DshLauncher.csproj -c Release --no-restore
+      - name: Self-check
+        shell: pwsh
+        run: dotnet run --project src/DshLauncher/DshLauncher.csproj -c Release --no-build -- --check

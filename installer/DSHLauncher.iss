@@ -1,5 +1,5 @@
 #define AppName "DSH Launcher"
-#define AppVersion "0.1.7"
+#define AppVersion "0.1.8"
 #define AppPublisher "DSH Launcher"
 #define NodeVersion "24.19.0"
 #define RepoRoot AddBackslash(SourcePath) + ".."
@@ -15,7 +15,7 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#RepoRoot}\artifacts\installer
-OutputBaseFilename=DSHLauncher-Setup-{#AppVersion}-x64
+OutputBaseFilename=DSHLauncher-Windows-Setup-{#AppVersion}-x64
 SetupIconFile={#RepoRoot}\src\DshLauncher\Assets\whale.ico
 UninstallDisplayIcon={app}\DshLauncher.exe
 Compression=lzma2/ultra64

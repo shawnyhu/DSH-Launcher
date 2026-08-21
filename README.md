@@ -1,12 +1,19 @@
 # DSH Launcher
 
-[![CI](https://github.com/shawnyhu/DSH-Launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/shawnyhu/DSH-Launcher/actions/workflows/ci.yml)
-[![GitHub Release](https://img.shields.io/github/v/release/shawnyhu/DSH-Launcher)](https://github.com/shawnyhu/DSH-Launcher/releases/latest)
+[![Windows CI](https://github.com/shawnyhu/DSH-Launcher/actions/workflows/windows-ci.yml/badge.svg)](https://github.com/shawnyhu/DSH-Launcher/actions/workflows/windows-ci.yml)
+[![GitHub Releases](https://img.shields.io/badge/releases-Windows%20%2B%20macOS-blue)](https://github.com/shawnyhu/DSH-Launcher/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的 Windows 安装、启动和管理工具。
+DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的桌面安装、启动和管理工具。
 
-## 功能
+| 平台 | 状态 | Release 标签 |
+|---|---|---|
+| Windows 10/11 x64 | `0.1.8` 可用 | `v0.1.8` 为桥接版；此后使用 `win-v*` |
+| macOS | 开发准备阶段 | `mac-v*` |
+
+Windows 与 macOS 使用同一个 GitHub 仓库，但各自维护版本号、Release、安装包和更新通道。完整跨平台规格见 [`项目说明.md`](项目说明.md)。
+
+## Windows 功能
 
 - 系统托盘常驻，双击打开 DSH Web UI。
 - 启动、停止和重启 Launcher 管理的 DSH 进程。
@@ -24,21 +31,42 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的 Windows 安装、�
 - 从 GitHub Releases 检查并安装 Launcher 轻量更新。
 - Launcher 不读取、保存或转发 API Key。
 
-## 一键安装
+## Windows 一键安装
 
-运行 `DSHLauncher-Setup-0.1.7-x64.exe`。
+运行 `DSHLauncher-Windows-Setup-0.1.8-x64.exe`。
 
 安装器会请求管理员权限，并默认把 Launcher 安装到 `C:\Program Files\DSH Launcher`。安装器会检查 Node.js；缺少兼容版本时安装 Node.js 24 LTS。随后默认全局安装最新的 `@deepseek-ai/dsh`，也允许改为 Launcher 管理的独立目录。安装过程中会单独选择 DSH_HOME，默认路径为 `%USERPROFILE%\.dsh`，可以手动修改。
 
 全局安装和独立安装都使用 npm 官方程序包。DSH_HOME 与程序安装位置相互独立。安装完成后请从开始菜单或桌面快捷方式启动 Launcher。
 
-## 只更新 Launcher
+## 只更新 Windows Launcher
 
-已经安装过 DSH Launcher 时，可以运行 `DSHLauncher-Update-0.1.7-x64.exe`。该轻量更新包只替换 Launcher 主程序，不安装 Node.js、不修改 DSH 程序包，也不更改 DSH_HOME 和现有配置。更新完成后请手动重新启动 Launcher；启动成功后会删除 `%TEMP%\DSHLauncher` 中已经下载的更新包。
+已经安装过 DSH Launcher 时，可以运行 `DSHLauncher-Windows-Update-0.1.8-x64.exe`。`v0.1.8` Release 还会提供旧客户端需要的兼容文件名 `DSHLauncher-Update-0.1.8-x64.exe`；两者内容相同。
+
+轻量更新包只替换 Launcher 主程序，不安装 Node.js、不修改 DSH 程序包，也不更改 DSH_HOME 和现有配置。更新完成后请手动重新启动 Launcher；启动成功后会删除 `%TEMP%\DSHLauncher` 中已经下载的更新包。
 
 Launcher 更新包下载时显示已下载大小、总大小和百分比；GitHub 未提供总大小时自动使用动态进度条。
 
-托盘菜单“检查 Launcher 更新”默认查询 [`shawnyhu/DSH-Launcher`](https://github.com/shawnyhu/DSH-Launcher) 的 Latest Release，寻找名称符合 `DSHLauncher-Update-*-x64.exe` 的资产。更新仓库可以在“配置 → 启动设置”中修改。该功能使用 GitHub 官方 Latest Release 链接，不需要 GitHub Token，也不会消耗匿名 REST API 额度。
+Windows `0.1.8` 是更新通道桥接版本：
+
+- `0.1.7` 及更早客户端仍通过仓库 Latest 找到 `v0.1.8`。
+- `0.1.8` 开始读取 GitHub Release 列表，同时校验 Windows 标签、语义版本和 x64 更新资产。
+- GitHub REST API 限流或不可用时自动使用官方 Releases Atom Feed。
+- Windows `0.1.9` 起使用 `win-v*`，并忽略所有 `mac-v*` Release。
+- macOS Launcher 使用同样的筛选流程，只接受 `mac-v*` 和对应 Mac 架构资产。
+
+更新仓库可以在“配置 → 启动设置”中修改，默认是 [`shawnyhu/DSH-Launcher`](https://github.com/shawnyhu/DSH-Launcher)。
+
+## GitHub 双平台 Release
+
+GitHub 的一个 Release 只能对应一个 Git tag。两个平台保持独立版本号，因此在同一仓库中使用两个 Release 通道：
+
+```text
+win-v0.1.9   → Windows Release
+mac-v0.1.0   → macOS Release
+```
+
+仓库级 Latest 只有一个，自动更新不使用它判断平台最新版。两个 Launcher 都先检查平台标签，再比较版本和选择匹配架构的更新资产。`v0.1.8` 仅用于把旧 Windows 客户端迁移到该规则。
 
 ## DSH_HOME
 
@@ -80,7 +108,7 @@ D:\DSH Versions\0.1.0-rc.8
 
 如需删除这些数据，请先自行备份。
 
-## 从源码构建
+## 从源码构建 Windows 版本
 
 要求：
 
@@ -101,8 +129,8 @@ D:\DSH Versions\0.1.0-rc.8
 
 ```text
 artifacts\app\DshLauncher.exe
-artifacts\installer\DSHLauncher-Setup-0.1.7-x64.exe
-artifacts\updater\DSHLauncher-Update-0.1.7-x64.exe
+artifacts\installer\DSHLauncher-Windows-Setup-0.1.8-x64.exe
+artifacts\updater\DSHLauncher-Windows-Update-0.1.8-x64.exe
 ```
 
 只发布应用：

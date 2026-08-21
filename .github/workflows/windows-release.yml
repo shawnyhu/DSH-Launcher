@@ -1,0 +1,82 @@
+name: Windows Release
+
+on:
+  push:
+    tags:
+      - "v0.1.8"
+      - "win-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+      - name: Validate tag and project version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $tagVersion = if ($tag -eq "v0.1.8") {
+            "0.1.8"
+          } elseif ($tag -match '^win-v(?<version>[0-9]+\.[0-9]+\.[0-9]+)$') {
+            $Matches.version
+          } else {
+            throw "Unsupported Windows release tag: $tag"
+          }
+          [xml]$project = Get-Content "src/DshLauncher/DshLauncher.csproj"
+          $projectVersion = [string]$project.Project.PropertyGroup.Version
+          if ($projectVersion -ne $tagVersion) {
+            throw "Tag version $tagVersion does not match project version $projectVersion."
+          }
+      - name: Build release assets
+        shell: pwsh
+        run: .\scripts\Build.ps1
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $setupFiles = @(Get-ChildItem "artifacts/installer/DSHLauncher-Windows-Setup-*-x64.exe")
+          $updateFiles = @(Get-ChildItem "artifacts/updater/DSHLauncher-Windows-Update-*-x64.exe")
+          if ($setupFiles.Count -ne 1 -or $updateFiles.Count -ne 1) {
+            throw "Expected exactly one Windows setup and one Windows update asset."
+          }
+          $setup = $setupFiles[0].FullName
+          $update = $updateFiles[0].FullName
+          $assets = @($setup, $update)
+
+          if ($tag -eq "v0.1.8") {
+            $legacySetup = Join-Path (Split-Path $setup) "DSHLauncher-Setup-0.1.8-x64.exe"
+            $legacyUpdate = Join-Path (Split-Path $update) "DSHLauncher-Update-0.1.8-x64.exe"
+            Copy-Item -LiteralPath $setup -Destination $legacySetup
+            Copy-Item -LiteralPath $update -Destination $legacyUpdate
+            $assets += $legacySetup, $legacyUpdate
+          }
+
+          $version = $tag -replace '^(?:win-)?v', ''
+          $title = "DSH Launcher for Windows v$version"
+          if (gh release view $tag 2>$null) {
+            gh release upload $tag $assets --clobber
+          } else {
+            $arguments = @(
+              "release", "create", $tag
+            ) + $assets + @(
+              "--generate-notes", "--title", $title
+            )
+            if ($tag -ne "v0.1.8") {
+              $arguments += "--latest=false"
+            }
+            & gh @arguments
+            if ($LASTEXITCODE -ne 0) {
+              throw "GitHub Release creation failed with exit code $LASTEXITCODE."
+            }
+          }
