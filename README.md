@@ -11,7 +11,7 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的桌面安装、启�
 | Windows 10/11 x64 | `0.1.9` 可用 | `win-v*` |
 | macOS | 开发准备阶段 | `mac-v*` |
 
-Windows 与 macOS 使用同一个 GitHub 仓库，但各自维护版本号、Release、安装包和更新通道。完整跨平台规格见 [`项目说明.md`](项目说明.md)。
+Windows 与 macOS 使用同一个 GitHub 仓库，并从 `0.2.0` 起共用产品版本号；平台标签、Release、安装包和更新通道保持独立。完整跨平台规格见 [`项目说明.md`](项目说明.md)。
 
 ## Windows 功能
 
@@ -61,12 +61,14 @@ Windows `0.1.8` 是更新通道桥接版本：
 
 ## GitHub 双平台 Release
 
-GitHub 的一个 Release 只能对应一个 Git tag。两个平台保持独立版本号，因此在同一仓库中使用两个 Release 通道：
+GitHub 的一个 Release 只能对应一个 Git tag。两个平台从 `0.2.0` 起共用产品版本号，同时保留两个独立 Release 通道：
 
 ```text
-win-v0.1.9   → Windows Release
-mac-v0.1.0   → macOS Release
+win-v0.2.0   → Windows Release 0.2.0
+mac-v0.2.0   → macOS Release 0.2.0
 ```
+
+两个标签应从同一个 `main` 基线创建。平台构建号可以独立递增，面向用户的版本号必须一致。
 
 仓库级 Latest 只有一个，由 GitHub 指向最后发布的平台版本，仅用于网页展示。自动更新不使用它判断平台最新版；两个 Launcher 都先检查平台标签，再比较版本和选择匹配架构的更新资产。`v0.1.8` 仅用于把旧 Windows 客户端迁移到该规则。
 
