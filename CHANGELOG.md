@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.9 - 2026-08-21
+
+- Close the downloaded updater file before renaming it on Windows.
+- Add a regression self-check that writes, closes, and renames a downloaded update.
+- Avoid WinForms synchronization-context deadlocks in asynchronous download file I/O.
+- Require one manual lightweight update from 0.1.7 or 0.1.8; automatic Launcher updates work again after 0.1.9 is installed.
+
 ## 0.1.8 - 2026-08-21
 
 - Add a Windows-specific `win-v*` Launcher update channel.

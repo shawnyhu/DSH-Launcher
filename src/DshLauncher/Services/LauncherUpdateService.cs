@@ -344,23 +344,13 @@ internal sealed class LauncherUpdateService : IDisposable
 
             await using var source =
                 await response.Content.ReadAsStreamAsync(cancellationToken);
-            await using var target = new FileStream(
-                temporary,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None,
-                bufferSize: 81920,
-                useAsync: true);
-            await CopyDownloadAsync(
+            var length = await WriteDownloadFileAsync(
                 source,
-                target,
+                temporary,
                 total,
                 release.AssetName,
                 progress,
                 cancellationToken);
-            await target.FlushAsync(cancellationToken);
-
-            var length = new FileInfo(temporary).Length;
             if (release.AssetSize > 0 && length != release.AssetSize)
             {
                 throw new InvalidDataException(
@@ -397,6 +387,35 @@ internal sealed class LauncherUpdateService : IDisposable
         }
     }
 
+    internal static async Task<long> WriteDownloadFileAsync(
+        Stream source,
+        string temporaryPath,
+        long? total,
+        string assetName,
+        IProgress<OperationProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using (var target = new FileStream(
+                         temporaryPath,
+                         FileMode.Create,
+                         FileAccess.Write,
+                         FileShare.None,
+                         bufferSize: 81920,
+                         useAsync: true))
+        {
+            await CopyDownloadAsync(
+                source,
+                target,
+                total,
+                assetName,
+                progress,
+                cancellationToken).ConfigureAwait(false);
+            await target.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return new FileInfo(temporaryPath).Length;
+    }
+
     internal static async Task CopyDownloadAsync(
         Stream source,
         Stream target,
@@ -413,7 +432,7 @@ internal sealed class LauncherUpdateService : IDisposable
         {
             var read = await source.ReadAsync(
                 buffer.AsMemory(),
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
             if (read == 0)
             {
                 break;
@@ -421,7 +440,7 @@ internal sealed class LauncherUpdateService : IDisposable
 
             await target.WriteAsync(
                 buffer.AsMemory(0, read),
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
             downloaded += read;
             var now = DateTimeOffset.UtcNow;
             if (now - lastReport < TimeSpan.FromMilliseconds(100) &&
