@@ -8,7 +8,7 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的桌面安装、启�
 
 | 平台 | 状态 | Release 标签 |
 |---|---|---|
-| Windows 10/11 x64 | `0.1.8` 可用 | `v0.1.8` 为桥接版；此后使用 `win-v*` |
+| Windows 10/11 x64 | `0.1.9` 可用 | `win-v*` |
 | macOS | 开发准备阶段 | `mac-v*` |
 
 Windows 与 macOS 使用同一个 GitHub 仓库，但各自维护版本号、Release、安装包和更新通道。完整跨平台规格见 [`项目说明.md`](项目说明.md)。
@@ -33,7 +33,7 @@ Windows 与 macOS 使用同一个 GitHub 仓库，但各自维护版本号、Rel
 
 ## Windows 一键安装
 
-运行 `DSHLauncher-Windows-Setup-0.1.8-x64.exe`。
+运行 `DSHLauncher-Windows-Setup-0.1.9-x64.exe`。
 
 安装器会请求管理员权限，并默认把 Launcher 安装到 `C:\Program Files\DSH Launcher`。安装器会检查 Node.js；缺少兼容版本时安装 Node.js 24 LTS。随后默认全局安装最新的 `@deepseek-ai/dsh`，也允许改为 Launcher 管理的独立目录。安装过程中会单独选择 DSH_HOME，默认路径为 `%USERPROFILE%\.dsh`，可以手动修改。
 
@@ -41,11 +41,13 @@ Windows 与 macOS 使用同一个 GitHub 仓库，但各自维护版本号、Rel
 
 ## 只更新 Windows Launcher
 
-已经安装过 DSH Launcher 时，可以运行 `DSHLauncher-Windows-Update-0.1.8-x64.exe`。`v0.1.8` Release 还会提供旧客户端需要的兼容文件名 `DSHLauncher-Update-0.1.8-x64.exe`；两者内容相同。
+已经安装过 DSH Launcher 时，可以运行 `DSHLauncher-Windows-Update-0.1.9-x64.exe`。
+
+`0.1.7` 和 `0.1.8` 的下载器会在关闭临时文件之前执行重命名，因此托盘自动更新会在下载完成后报“文件正在被另一个进程使用”。这一次必须从 [`win-v0.1.9` Release](https://github.com/shawnyhu/DSH-Launcher/releases/tag/win-v0.1.9) 手动下载并运行轻量更新包。安装 `0.1.9` 后，后续托盘自动更新恢复正常。
 
 轻量更新包只替换 Launcher 主程序，不安装 Node.js、不修改 DSH 程序包，也不更改 DSH_HOME 和现有配置。更新完成后请手动重新启动 Launcher；启动成功后会删除 `%TEMP%\DSHLauncher` 中已经下载的更新包。
 
-Launcher 更新包下载时显示已下载大小、总大小和百分比；GitHub 未提供总大小时自动使用动态进度条。
+Launcher 更新包下载时显示已下载大小、总大小和百分比；GitHub 未提供总大小时自动使用动态进度条。完成写入后会先关闭临时文件句柄，再执行重命名和启动更新器。
 
 Windows `0.1.8` 是更新通道桥接版本：
 
@@ -129,8 +131,8 @@ D:\DSH Versions\0.1.0-rc.8
 
 ```text
 artifacts\app\DshLauncher.exe
-artifacts\installer\DSHLauncher-Windows-Setup-0.1.8-x64.exe
-artifacts\updater\DSHLauncher-Windows-Update-0.1.8-x64.exe
+artifacts\installer\DSHLauncher-Windows-Setup-0.1.9-x64.exe
+artifacts\updater\DSHLauncher-Windows-Update-0.1.9-x64.exe
 ```
 
 只发布应用：

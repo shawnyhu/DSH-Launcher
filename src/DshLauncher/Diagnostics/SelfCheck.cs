@@ -224,26 +224,51 @@ internal static class SelfCheck
 
         try
         {
-            using var progressForm =
-                new UpdateProgressForm("更新进度自检");
-            progressForm.CreateControl();
-            progressForm.Report(new OperationProgress(
-                "正在安装 DSH…",
-                Detail: "动态进度"));
-            progressForm.Report(new OperationProgress(
-                "正在下载 Launcher 更新包…",
-                50,
-                "5.0 MB / 10.0 MB"));
+            using (var progressForm =
+                   new UpdateProgressForm("更新进度自检"))
+            {
+                progressForm.CreateControl();
+                progressForm.Report(new OperationProgress(
+                    "正在安装 DSH…",
+                    Detail: "动态进度"));
+                progressForm.Report(new OperationProgress(
+                    "正在下载 Launcher 更新包…",
+                    50,
+                    "5.0 MB / 10.0 MB"));
+            }
             var recorder = new OperationProgressRecorder();
             var payload = new byte[256 * 1024];
-            await using var source = new MemoryStream(payload);
-            await using var target = new MemoryStream();
-            await LauncherUpdateService.CopyDownloadAsync(
-                source,
-                target,
-                payload.Length,
-                "test-update.exe",
-                recorder);
+            var downloadRoot = Path.Combine(
+                Path.GetTempPath(),
+                "DSHLauncher-Download-SelfCheck-" +
+                Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(downloadRoot);
+            var temporary = Path.Combine(
+                downloadRoot,
+                "test-update.exe.download");
+            var destination = Path.Combine(
+                downloadRoot,
+                "test-update.exe");
+            long downloadedLength;
+            try
+            {
+                await using var source = new MemoryStream(payload);
+                downloadedLength =
+                    await LauncherUpdateService.WriteDownloadFileAsync(
+                        source,
+                        temporary,
+                        payload.Length,
+                        "test-update.exe",
+                        recorder).ConfigureAwait(false);
+                File.Move(temporary, destination, true);
+            }
+            finally
+            {
+                if (Directory.Exists(downloadRoot))
+                {
+                    Directory.Delete(downloadRoot, true);
+                }
+            }
             var finalProgress = recorder.Values.LastOrDefault();
             if (LauncherUpdateService.CalculateDownloadPercentage(
                     5,
@@ -251,7 +276,7 @@ internal static class SelfCheck
                 LauncherUpdateService.CalculateDownloadPercentage(
                     5,
                     null) is not null ||
-                target.Length != payload.Length ||
+                downloadedLength != payload.Length ||
                 finalProgress?.Percentage != 100)
             {
                 failures.Add("Update progress calculation failed.");
@@ -260,7 +285,8 @@ internal static class SelfCheck
             {
                 Console.WriteLine(
                     "[OK] Update progress window supports marquee, " +
-                    "percentage, and streamed byte progress.");
+                    "percentage, streamed byte progress, and an unlocked " +
+                    "completed download.");
             }
         }
         catch (Exception error)
