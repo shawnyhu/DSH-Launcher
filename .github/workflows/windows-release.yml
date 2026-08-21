@@ -72,9 +72,6 @@ jobs:
             ) + $assets + @(
               "--generate-notes", "--title", $title
             )
-            if ($tag -ne "v0.1.8") {
-              $arguments += "--latest=false"
-            }
             & gh @arguments
             if ($LASTEXITCODE -ne 0) {
               throw "GitHub Release creation failed with exit code $LASTEXITCODE."
