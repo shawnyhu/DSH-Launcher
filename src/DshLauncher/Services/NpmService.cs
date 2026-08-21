@@ -15,6 +15,11 @@ internal sealed record NpmVersionInfo(string Version, DateTimeOffset? PublishedA
     }
 }
 
+internal sealed record NpmUpdateInfo(
+    string LatestVersion,
+    DateTimeOffset? LatestPublishedAt,
+    bool IsUpdateAvailable);
+
 internal sealed class NpmService
 {
     private const string PackageName = "@deepseek-ai/dsh";
@@ -120,23 +125,89 @@ internal sealed class NpmService
             }
         }
 
-        versions.Reverse();
-        return versions.Select(version => new NpmVersionInfo(
-            version,
-            published.TryGetValue(version, out var date) ? date : null,
-            string.Equals(version, latest, StringComparison.OrdinalIgnoreCase))).ToList();
+        var available = versions.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        using var releases = new DshReleaseService(_log);
+        var official = await releases.GetPublishedAsync(
+            available,
+            cancellationToken);
+        return BuildVersionList(
+            versions,
+            published,
+            official,
+            latest);
     }
 
-    public async Task<string> GetLatestVersionAsync(CancellationToken cancellationToken = default)
+    internal static IReadOnlyList<NpmVersionInfo> BuildVersionList(
+        IReadOnlyList<string> versions,
+        IReadOnlyDictionary<string, DateTimeOffset> npmPublished,
+        IReadOnlyList<DshReleaseVersion> official,
+        string? distTagLatest)
     {
-        var npm = FindNpm() ?? throw new InvalidOperationException("未检测到 npm。请先安装 Node.js 24 LTS。");
-        var result = await _commands.RunAsync(npm, ["view", PackageName, "version"], timeout: TimeSpan.FromMinutes(1), cancellationToken: cancellationToken);
-        if (!result.Success || string.IsNullOrWhiteSpace(result.StandardOutput))
-        {
-            throw new InvalidOperationException("检查最新版本失败：" + result.CombinedOutput);
-        }
+        var latest = official.FirstOrDefault()?.Version ?? versions
+            .Where(npmPublished.ContainsKey)
+            .OrderByDescending(version => npmPublished[version])
+            .FirstOrDefault() ?? distTagLatest;
+        var officialPublished = official
+            .GroupBy(
+                release => release.Version,
+                StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Max(release => release.PublishedAt),
+                StringComparer.OrdinalIgnoreCase);
 
-        return result.StandardOutput.Trim();
+        return versions
+            .Select(version =>
+            {
+                var publishedAt = officialPublished.TryGetValue(
+                    version,
+                    out var releaseDate)
+                    ? releaseDate
+                    : npmPublished.TryGetValue(version, out var npmDate)
+                        ? npmDate
+                        : (DateTimeOffset?)null;
+                return new NpmVersionInfo(
+                    version,
+                    publishedAt,
+                    string.Equals(
+                        version,
+                        latest,
+                        StringComparison.OrdinalIgnoreCase));
+            })
+            .OrderByDescending(item =>
+                item.PublishedAt ?? DateTimeOffset.MinValue)
+            .ThenByDescending(
+                item => item.Version,
+                StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public async Task<NpmUpdateInfo> CheckForUpdateAsync(
+        string installedVersion,
+        CancellationToken cancellationToken = default)
+    {
+        var versions = await GetVersionsAsync(cancellationToken);
+        var latest = versions.FirstOrDefault(item => item.IsLatest)
+            ?? throw new InvalidOperationException(
+                "没有找到可安装的 DSH Release。");
+        var installed = versions.FirstOrDefault(item =>
+            string.Equals(
+                item.Version,
+                installedVersion,
+                StringComparison.OrdinalIgnoreCase));
+        var sameVersion = string.Equals(
+            latest.Version,
+            installedVersion,
+            StringComparison.OrdinalIgnoreCase);
+        var isUpdateAvailable = !sameVersion &&
+            (installed?.PublishedAt is null ||
+             latest.PublishedAt is null ||
+             latest.PublishedAt > installed.PublishedAt);
+
+        return new NpmUpdateInfo(
+            latest.Version,
+            latest.PublishedAt,
+            isUpdateAvailable);
     }
 
     public async Task<DshInstallation> InstallAsync(
@@ -210,13 +281,41 @@ internal sealed class NpmService
         IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        var latest = await GetLatestVersionAsync(cancellationToken);
-        if (string.Equals(latest, installation.InstalledVersion, StringComparison.OrdinalIgnoreCase))
+        var update = await CheckForUpdateAsync(
+            installation.InstalledVersion,
+            cancellationToken);
+        if (!update.IsUpdateAvailable)
         {
             return installation;
         }
 
-        return await InstallAsync(installation.Scope, installation.InstallRoot, latest, progress, cancellationToken);
+        return await UpdateToAsync(
+            installation,
+            update.LatestVersion,
+            progress,
+            cancellationToken);
+    }
+
+    public async Task<DshInstallation> UpdateToAsync(
+        DshInstallation installation,
+        string targetVersion,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.Equals(
+                targetVersion,
+                installation.InstalledVersion,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return installation;
+        }
+
+        return await InstallAsync(
+            installation.Scope,
+            installation.InstallRoot,
+            targetVersion,
+            progress,
+            cancellationToken);
     }
 
     public async Task UninstallAsync(DshInstallation installation, CancellationToken cancellationToken = default)

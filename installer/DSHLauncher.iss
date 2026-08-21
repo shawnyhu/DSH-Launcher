@@ -1,5 +1,5 @@
 #define AppName "DSH Launcher"
-#define AppVersion "0.1.5"
+#define AppVersion "0.1.6"
 #define AppPublisher "DSH Launcher"
 #define NodeVersion "24.19.0"
 #define RepoRoot AddBackslash(SourcePath) + ".."

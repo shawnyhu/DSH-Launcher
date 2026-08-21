@@ -12,7 +12,7 @@
     <SelfContained>true</SelfContained>
     <PublishTrimmed>false</PublishTrimmed>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <Version>0.1.5</Version>
+    <Version>0.1.6</Version>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\whale.svg" />

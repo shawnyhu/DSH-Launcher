@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6 - 2026-08-21
+
+- Select the newest installable DSH package by official GitHub Release publish time, with an Atom Feed fallback for API rate limits.
+- Fall back to npm publish time and prevent updates from downgrading a newer installed package.
+- Delete downloaded Launcher update packages on the next normal application start.
+
 ## 0.1.5 - 2026-08-21
 
 - Do not automatically start Launcher after a full installation or lightweight update.

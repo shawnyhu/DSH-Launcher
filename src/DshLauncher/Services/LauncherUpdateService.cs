@@ -119,6 +119,55 @@ internal sealed class LauncherUpdateService : IDisposable
         return destination;
     }
 
+    public static void CleanupDownloadedUpdates(AppLogger log)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "DSHLauncher");
+        TryCleanupDownloadedUpdates(root, log);
+    }
+
+    internal static bool TryCleanupDownloadedUpdates(
+        string root,
+        AppLogger log)
+    {
+        try
+        {
+            var fullRoot = Path.GetFullPath(root);
+            var fullTemp = Path.GetFullPath(Path.GetTempPath())
+                .TrimEnd(Path.DirectorySeparatorChar) +
+                Path.DirectorySeparatorChar;
+            if (!fullRoot.StartsWith(
+                    fullTemp,
+                    StringComparison.OrdinalIgnoreCase) ||
+                !Path.GetFileName(fullRoot).Equals(
+                    "DSHLauncher",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Refusing to clean an updater directory outside " +
+                    "the expected temporary path.");
+            }
+
+            if (!Directory.Exists(fullRoot))
+            {
+                return true;
+            }
+
+            Directory.Delete(fullRoot, true);
+            log.Info($"Deleted downloaded Launcher updates: {fullRoot}");
+            return true;
+        }
+        catch (Exception error)
+            when (error is IOException or
+                  UnauthorizedAccessException or
+                  InvalidOperationException)
+        {
+            log.Warn(
+                "Could not delete downloaded Launcher updates: " +
+                error.Message);
+            return false;
+        }
+    }
+
     private static string NormalizeRepository(string value)
     {
         var trimmed = value.Trim().TrimEnd('/');
