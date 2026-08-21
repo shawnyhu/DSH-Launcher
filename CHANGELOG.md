@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5 - 2026-08-21
+
+- Do not automatically start Launcher after a full installation or lightweight update.
+- Require a normal user-initiated launch after setup so DSH inherits the standard desktop session.
+
 ## 0.1.4 - 2026-08-21
 
 - Detect elevated GUI launches before creating the tray or starting DSH.
