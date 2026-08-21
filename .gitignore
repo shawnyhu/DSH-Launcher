@@ -1,0 +1,17 @@
+bin/
+obj/
+.vs/
+.idea/
+.tools/
+artifacts/
+.smoke/
+installer/cache/
+*.user
+*.suo
+*.log
+
+*.trx
+TestResults/
+coverage/
+.DS_Store
+Thumbs.db

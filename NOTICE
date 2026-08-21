@@ -1,0 +1,9 @@
+DSH Launcher
+
+This project includes the whale icon distributed with @deepseek-ai/dsh.
+That asset is used under the MIT License:
+
+Copyright (c) 2026 DeepSeek
+
+See LICENSE for this project's license. DeepSeek Harness is a separate project
+and is not bundled into the DSH Launcher source tree.

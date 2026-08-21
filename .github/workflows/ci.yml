@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore src/DshLauncher/DshLauncher.csproj
+      - name: Build
+        shell: pwsh
+        run: dotnet build src/DshLauncher/DshLauncher.csproj -c Release --no-restore
