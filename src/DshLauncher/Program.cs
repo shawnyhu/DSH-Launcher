@@ -51,6 +51,24 @@ internal static class Program
             return 0;
         }
 
+        if (UserSessionService.IsElevated())
+        {
+            using var elevationLog = new AppLogger();
+            elevationLog.Warn(
+                $"Elevated GUI launch detected; PID={Environment.ProcessId}.");
+            if (!UserSessionService.WasRelaunched(args) &&
+                UserSessionService.TryRelaunchUnelevated(args, elevationLog))
+            {
+                return 0;
+            }
+
+            MessageBox.Show(
+                "Launcher 无法切换到普通用户权限。请关闭本程序，然后从开始菜单或桌面快捷方式重新打开。",
+                "DSH Launcher",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+            return 1;
+        }
 
         using var mutex = new Mutex(true, MutexName, out var firstInstance);
         var store = new SettingsStore();
@@ -70,6 +88,9 @@ internal static class Program
         }
 
         using var log = new AppLogger();
+        log.Info(
+            $"Launcher {LauncherUpdateService.CurrentVersionText} started; " +
+            $"PID={Environment.ProcessId}; elevated={UserSessionService.IsElevated()}.");
         try
         {
             var settings = store.LoadAsync().GetAwaiter().GetResult();

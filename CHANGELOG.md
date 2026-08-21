@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 - 2026-08-21
+
+- Detect elevated GUI launches before creating the tray or starting DSH.
+- Relaunch through the interactive Windows Shell at medium integrity.
+- Log Launcher version, process ID, and elevation state at startup.
+
 ## 0.1.3 - 2026-08-21
 
 - Start Launcher as the original non-elevated user after setup and updates.
