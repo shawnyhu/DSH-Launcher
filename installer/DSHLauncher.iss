@@ -1,5 +1,5 @@
 #define AppName "DSH Launcher"
-#define AppVersion "0.1.4"
+#define AppVersion "0.1.5"
 #define AppPublisher "DSH Launcher"
 #define NodeVersion "24.19.0"
 #define RepoRoot AddBackslash(SourcePath) + ".."
@@ -47,7 +47,6 @@ Name: "{autodesktop}\DSH Launcher"; Filename: "{app}\DshLauncher.exe"; Tasks: de
 Filename: "{sys}\msiexec.exe"; Parameters: "/i ""{tmp}\node-lts-x64.msi"" /qn /norestart"; StatusMsg: "正在安装 Node.js 24 LTS…"; Check: NeedNode; Verb: "runas"; Flags: shellexec waituntilterminated
 Filename: "{app}\DshLauncher.exe"; Parameters: "{code:GetDshInstallArguments}"; StatusMsg: "正在安装 DeepSeek Harness…"; Flags: waituntilterminated runhidden runasoriginaluser
 Filename: "{app}\DshLauncher.exe"; Parameters: "--set-autostart on"; StatusMsg: "正在配置开机自启…"; Tasks: autostart; Flags: waituntilterminated runhidden runasoriginaluser
-Filename: "{app}\DshLauncher.exe"; Description: "启动 DSH Launcher"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [UninstallRun]
 Filename: "{app}\DshLauncher.exe"; Parameters: "--set-autostart off"; Flags: runhidden; RunOnceId: "RemoveAutoStart"

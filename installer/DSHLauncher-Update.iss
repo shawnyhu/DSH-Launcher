@@ -1,5 +1,5 @@
 #define AppName "DSH Launcher Update"
-#define AppVersion "0.1.4"
+#define AppVersion "0.1.5"
 #define RepoRoot AddBackslash(SourcePath) + ".."
 
 [Setup]
@@ -33,7 +33,6 @@ Name: "chinesesimp"; MessagesFile: "{#RepoRoot}\installer\languages\ChineseSimpl
 Source: "{#RepoRoot}\artifacts\app\DshLauncher.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Run]
-Filename: "{app}\DshLauncher.exe"; Description: "Start DSH Launcher"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [Code]
 function GetLauncherDir(Param: String): String;
