@@ -68,7 +68,7 @@ win-v0.1.9   → Windows Release
 mac-v0.1.0   → macOS Release
 ```
 
-仓库级 Latest 只有一个，自动更新不使用它判断平台最新版。两个 Launcher 都先检查平台标签，再比较版本和选择匹配架构的更新资产。`v0.1.8` 仅用于把旧 Windows 客户端迁移到该规则。
+仓库级 Latest 只有一个，由 GitHub 指向最后发布的平台版本，仅用于网页展示。自动更新不使用它判断平台最新版；两个 Launcher 都先检查平台标签，再比较版本和选择匹配架构的更新资产。`v0.1.8` 仅用于把旧 Windows 客户端迁移到该规则。
 
 ## DSH_HOME
 
