@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 - 2026-08-21
+
+- Start Launcher as the original non-elevated user after setup and updates.
+- Avoid GitHub REST API rate limits by using the official latest-release link.
+- Show the Launcher version in the tray menu.
+- Include the relevant DSH stderr line when startup fails.
+- Preserve custom Launcher installation paths during lightweight updates.
+
 ## 0.1.2 - 2026-08-21
 
 - Allow build self-checks on clean machines before DSH is installed.

@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text.Json;
 using DshLauncher.Infrastructure;
 
 namespace DshLauncher.Services;
@@ -25,66 +24,60 @@ internal sealed class LauncherUpdateService : IDisposable
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
         _http.DefaultRequestHeaders.UserAgent.Add(
             new ProductInfoHeaderValue("DSHLauncher", CurrentVersion.ToString()));
-        _http.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        _http.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
     }
 
     public static Version CurrentVersion =>
         Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0);
+
+    public static string CurrentVersionText
+    {
+        get
+        {
+            var version = CurrentVersion;
+            return version.Build >= 0 ? version.ToString(3) : version.ToString();
+        }
+    }
 
     public async Task<LauncherRelease> GetLatestAsync(
         string repository,
         CancellationToken cancellationToken = default)
     {
         var slug = NormalizeRepository(repository);
+        var latestUrl = $"https://github.com/{slug}/releases/latest";
         using var response = await _http.GetAsync(
-            $"https://api.github.com/repos/{slug}/releases/latest",
+            latestUrl,
+            HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
         response.EnsureSuccessStatusCode();
-        using var document = JsonDocument.Parse(
-            await response.Content.ReadAsStringAsync(cancellationToken));
-        var root = document.RootElement;
-        var tag = RequiredString(root, "tag_name");
-        var name = GetString(root, "name") ?? tag;
-        var pageUrl = RequiredString(root, "html_url");
+
+        var pageUri = response.RequestMessage?.RequestUri ?? new Uri(latestUrl);
+        const string marker = "/releases/tag/";
+        var markerIndex = pageUri.AbsolutePath.IndexOf(
+            marker,
+            StringComparison.OrdinalIgnoreCase);
+        if (markerIndex < 0)
+        {
+            throw new InvalidDataException(
+                "GitHub did not redirect the latest release link to a version tag.");
+        }
+
+        var encodedTag = pageUri.AbsolutePath[(markerIndex + marker.Length)..].Trim('/');
+        var tag = Uri.UnescapeDataString(encodedTag);
         var version = ParseVersion(tag);
-        if (!root.TryGetProperty("assets", out var assets) ||
-            assets.ValueKind != JsonValueKind.Array)
-        {
-            throw new InvalidOperationException("The GitHub release does not contain assets.");
-        }
+        var versionText = version.Build >= 0 ? version.ToString(3) : version.ToString();
+        var assetName = $"DSHLauncher-Update-{versionText}-x64.exe";
+        var downloadUrl =
+            $"https://github.com/{slug}/releases/download/" +
+            $"{Uri.EscapeDataString(tag)}/{Uri.EscapeDataString(assetName)}";
 
-        JsonElement? match = null;
-        foreach (var asset in assets.EnumerateArray())
-        {
-            var assetName = GetString(asset, "name");
-            if (assetName is not null &&
-                assetName.StartsWith("DSHLauncher-Update-", StringComparison.OrdinalIgnoreCase) &&
-                assetName.EndsWith("-x64.exe", StringComparison.OrdinalIgnoreCase))
-            {
-                match = asset;
-                break;
-            }
-        }
-
-        if (match is null)
-        {
-            throw new InvalidOperationException(
-                "The latest release does not contain a DSHLauncher-Update-*-x64.exe asset.");
-        }
-
-        var selected = match.Value;
         return new LauncherRelease(
             tag,
-            name,
+            tag,
             version,
-            pageUrl,
-            RequiredString(selected, "name"),
-            RequiredString(selected, "browser_download_url"),
-            selected.TryGetProperty("size", out var size) && size.TryGetInt64(out var bytes)
-                ? bytes
-                : 0);
+            pageUri.ToString(),
+            assetName,
+            downloadUrl,
+            0);
     }
 
     public async Task<string> DownloadAsync(
@@ -157,15 +150,6 @@ internal sealed class LauncherUpdateService : IDisposable
             ? version
             : throw new FormatException($"GitHub release tag is not a supported version: {value}");
     }
-
-    private static string RequiredString(JsonElement element, string name) =>
-        GetString(element, name) ??
-        throw new InvalidDataException($"GitHub release response is missing {name}.");
-
-    private static string? GetString(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 
     public void Dispose() => _http.Dispose();
 }

@@ -77,6 +77,8 @@ internal sealed class DshRuntimeService : IAsyncDisposable
         info.ArgumentList.Add("--no-open");
         info.Environment["DSH_HOME"] = Path.GetFullPath(dshHome);
 
+        var startupErrors = new List<string>();
+        var startupErrorsLock = new object();
         var process = new Process { StartInfo = info, EnableRaisingEvents = true };
         process.OutputDataReceived += (_, e) =>
         {
@@ -84,7 +86,13 @@ internal sealed class DshRuntimeService : IAsyncDisposable
         };
         process.ErrorDataReceived += (_, e) =>
         {
-            if (!string.IsNullOrWhiteSpace(e.Data)) _log.Warn("DSH: " + e.Data);
+            if (string.IsNullOrWhiteSpace(e.Data)) return;
+            _log.Warn("DSH: " + e.Data);
+            lock (startupErrorsLock)
+            {
+                if (startupErrors.Count >= 40) startupErrors.RemoveAt(0);
+                startupErrors.Add(e.Data);
+            }
         };
         process.Exited += OnProcessExited;
 
@@ -108,7 +116,20 @@ internal sealed class DshRuntimeService : IAsyncDisposable
             cancellationToken.ThrowIfCancellationRequested();
             if (process.HasExited)
             {
-                throw new InvalidOperationException($"DSH exited during startup with code {process.ExitCode}.");
+                process.WaitForExit();
+                string? diagnostic;
+                lock (startupErrorsLock)
+                {
+                    diagnostic = startupErrors.LastOrDefault(line =>
+                        line.StartsWith("Error:", StringComparison.OrdinalIgnoreCase))
+                        ?? startupErrors.LastOrDefault();
+                }
+
+                var detail = string.IsNullOrWhiteSpace(diagnostic)
+                    ? string.Empty
+                    : Environment.NewLine + Environment.NewLine + diagnostic;
+                throw new InvalidOperationException(
+                    $"DSH exited during startup with code {process.ExitCode}.{detail}");
             }
 
             if (await IsDshReadyAsync(port, cancellationToken))

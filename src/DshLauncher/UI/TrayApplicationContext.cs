@@ -23,6 +23,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly ToolStripMenuItem _restart;
     private readonly ToolStripMenuItem _currentInstallation;
     private readonly ToolStripMenuItem _currentHome;
+    private readonly ToolStripMenuItem _launcherVersion;
     private readonly ToolStripMenuItem _update;
     private readonly ToolStripMenuItem _updateLauncher;
     private readonly ToolStripMenuItem _autoStart;
@@ -57,6 +58,11 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _restart = Item("\u91CD\u542F DSH", async (_, _) => await RestartAsync());
         _currentInstallation = new ToolStripMenuItem { Enabled = false };
         _currentHome = new ToolStripMenuItem { Enabled = false };
+        _launcherVersion = new ToolStripMenuItem
+        {
+            Text = $"Launcher 版本：{LauncherUpdateService.CurrentVersionText}",
+            Enabled = false
+        };
         _update = Item("\u68C0\u67E5\u5E76\u66F4\u65B0\u5F53\u524D DSH", async (_, _) => await UpdateCurrentAsync());
         _updateLauncher = Item("检查 Launcher 更新", async (_, _) => await UpdateLauncherAsync());
         var configure = Item("\u914D\u7F6E\u2026", async (_, _) => await ConfigureAsync());
@@ -71,6 +77,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             _stop,
             _restart,
             new ToolStripSeparator(),
+            _launcherVersion,
             _currentInstallation,
             _currentHome,
             _update,
@@ -334,7 +341,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             if (release.Version <= LauncherUpdateService.CurrentVersion)
             {
                 MessageBox.Show(
-                    $"当前 Launcher {LauncherUpdateService.CurrentVersion} 已是最新版本。",
+                    $"当前 Launcher {LauncherUpdateService.CurrentVersionText} 已是最新版本。",
                     "检查 Launcher 更新",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);

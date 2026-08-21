@@ -24,7 +24,7 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的 Windows 安装、�
 
 ## 一键安装
 
-运行 `DSHLauncher-Setup-0.1.2-x64.exe`。
+运行 `DSHLauncher-Setup-0.1.3-x64.exe`。
 
 安装器会请求管理员权限，并默认把 Launcher 安装到 `C:\Program Files\DSH Launcher`。安装器会检查 Node.js；缺少兼容版本时安装 Node.js 24 LTS。随后默认全局安装最新的 `@deepseek-ai/dsh`，也允许改为 Launcher 管理的独立目录。安装过程中会单独选择 DSH_HOME，默认路径为 `%USERPROFILE%\.dsh`，可以手动修改。
 
@@ -32,9 +32,9 @@ DSH Launcher 是 DeepSeek Harness（`@deepseek-ai/dsh`）的 Windows 安装、�
 
 ## 只更新 Launcher
 
-已经安装过 DSH Launcher 时，可以运行 `DSHLauncher-Update-0.1.2-x64.exe`。该轻量更新包只替换 Launcher 主程序，不安装 Node.js、不修改 DSH 程序包，也不更改 DSH_HOME 和现有配置。
+已经安装过 DSH Launcher 时，可以运行 `DSHLauncher-Update-0.1.3-x64.exe`。该轻量更新包只替换 Launcher 主程序，不安装 Node.js、不修改 DSH 程序包，也不更改 DSH_HOME 和现有配置。
 
-托盘菜单“检查 Launcher 更新”默认查询 [`shawnyhu/DSH-Launcher`](https://github.com/shawnyhu/DSH-Launcher) 的 Latest Release，寻找名称符合 `DSHLauncher-Update-*-x64.exe` 的资产。更新仓库可以在“配置 → 启动设置”中修改。该功能不读取 GitHub Token，公开仓库使用 GitHub 的匿名 API。
+托盘菜单“检查 Launcher 更新”默认查询 [`shawnyhu/DSH-Launcher`](https://github.com/shawnyhu/DSH-Launcher) 的 Latest Release，寻找名称符合 `DSHLauncher-Update-*-x64.exe` 的资产。更新仓库可以在“配置 → 启动设置”中修改。该功能使用 GitHub 官方 Latest Release 链接，不需要 GitHub Token，也不会消耗匿名 REST API 额度。
 
 ## DSH_HOME
 
@@ -97,8 +97,8 @@ D:\DSH Versions\0.1.0-rc.8
 
 ```text
 artifacts\app\DshLauncher.exe
-artifacts\installer\DSHLauncher-Setup-0.1.2-x64.exe
-artifacts\updater\DSHLauncher-Update-0.1.2-x64.exe
+artifacts\installer\DSHLauncher-Setup-0.1.3-x64.exe
+artifacts\updater\DSHLauncher-Update-0.1.3-x64.exe
 ```
 
 只发布应用：

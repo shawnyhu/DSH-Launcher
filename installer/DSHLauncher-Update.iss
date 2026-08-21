@@ -1,5 +1,5 @@
 #define AppName "DSH Launcher Update"
-#define AppVersion "0.1.2"
+#define AppVersion "0.1.3"
 #define RepoRoot AddBackslash(SourcePath) + ".."
 
 [Setup]
@@ -7,7 +7,7 @@ AppId={{08403760-297B-4F56-9570-6CF4CA4C4447}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher=DSH Launcher
-DefaultDirName={autopf}\DSH Launcher
+DefaultDirName={code:GetLauncherDir}
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -33,4 +33,19 @@ Name: "chinesesimp"; MessagesFile: "{#RepoRoot}\installer\languages\ChineseSimpl
 Source: "{#RepoRoot}\artifacts\app\DshLauncher.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Run]
-Filename: "{app}\DshLauncher.exe"; Description: "Start DSH Launcher"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\DshLauncher.exe"; Description: "Start DSH Launcher"; Flags: nowait postinstall skipifsilent runasoriginaluser
+
+[Code]
+function GetLauncherDir(Param: String): String;
+var
+  InstallLocation: String;
+begin
+  if RegQueryStringValue(
+       HKLM64,
+       'Software\Microsoft\Windows\CurrentVersion\Uninstall\{6D269B8A-6CA4-4812-A680-C4882E7866EF}_is1',
+       'InstallLocation',
+       InstallLocation) and (InstallLocation <> '') then
+    Result := InstallLocation
+  else
+    Result := ExpandConstant('{autopf}\DSH Launcher');
+end;
