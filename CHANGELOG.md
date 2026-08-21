@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7 - 2026-08-21
+
+- Show a dedicated progress window while updating DSH or Launcher.
+- Report real byte and percentage progress for Launcher update downloads.
+- Show staged marquee progress while stopping, installing, saving, and restarting DSH.
+- Remove partial Launcher downloads when a download fails.
+
 ## 0.1.6 - 2026-08-21
 
 - Select the newest installable DSH package by official GitHub Release publish time, with an Atom Feed fallback for API rate limits.

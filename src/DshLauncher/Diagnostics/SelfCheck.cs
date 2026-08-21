@@ -180,6 +180,52 @@ internal static class SelfCheck
             failures.Add("Configuration window: " + error.Message);
         }
 
+        try
+        {
+            using var progressForm =
+                new UpdateProgressForm("更新进度自检");
+            progressForm.CreateControl();
+            progressForm.Report(new OperationProgress(
+                "正在安装 DSH…",
+                Detail: "动态进度"));
+            progressForm.Report(new OperationProgress(
+                "正在下载 Launcher 更新包…",
+                50,
+                "5.0 MB / 10.0 MB"));
+            var recorder = new OperationProgressRecorder();
+            var payload = new byte[256 * 1024];
+            await using var source = new MemoryStream(payload);
+            await using var target = new MemoryStream();
+            await LauncherUpdateService.CopyDownloadAsync(
+                source,
+                target,
+                payload.Length,
+                "test-update.exe",
+                recorder);
+            var finalProgress = recorder.Values.LastOrDefault();
+            if (LauncherUpdateService.CalculateDownloadPercentage(
+                    5,
+                    10) != 50 ||
+                LauncherUpdateService.CalculateDownloadPercentage(
+                    5,
+                    null) is not null ||
+                target.Length != payload.Length ||
+                finalProgress?.Percentage != 100)
+            {
+                failures.Add("Update progress calculation failed.");
+            }
+            else
+            {
+                Console.WriteLine(
+                    "[OK] Update progress window supports marquee, " +
+                    "percentage, and streamed byte progress.");
+            }
+        }
+        catch (Exception error)
+        {
+            failures.Add("Update progress window: " + error.Message);
+        }
+
         if (failures.Count == 0)
         {
             Console.WriteLine("SELF-CHECK PASSED");
@@ -189,6 +235,15 @@ internal static class SelfCheck
         foreach (var failure in failures) Console.WriteLine("[FAIL] " + failure);
         Console.WriteLine("SELF-CHECK FAILED");
         return 1;
+    }
+
+    private sealed class OperationProgressRecorder :
+        IProgress<OperationProgress>
+    {
+        public List<OperationProgress> Values { get; } = [];
+
+        public void Report(OperationProgress value) =>
+            Values.Add(value);
     }
 
     [DllImport("kernel32.dll")]

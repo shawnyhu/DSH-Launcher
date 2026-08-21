@@ -1,5 +1,5 @@
 #define AppName "DSH Launcher Update"
-#define AppVersion "0.1.6"
+#define AppVersion "0.1.7"
 #define RepoRoot AddBackslash(SourcePath) + ".."
 
 [Setup]
