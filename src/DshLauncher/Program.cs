@@ -88,6 +88,7 @@ internal static class Program
         }
 
         using var log = new AppLogger();
+        LauncherUpdateService.CleanupDownloadedUpdates(log);
         log.Info(
             $"Launcher {LauncherUpdateService.CurrentVersionText} started; " +
             $"PID={Environment.ProcessId}; elevated={UserSessionService.IsElevated()}.");

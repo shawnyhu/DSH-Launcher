@@ -262,19 +262,34 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         await RunOperationAsync(async () =>
         {
-            var latest = await _npm.GetLatestVersionAsync();
-            if (string.Equals(latest, selected.InstalledVersion, StringComparison.OrdinalIgnoreCase))
+            var update = await _npm.CheckForUpdateAsync(
+                selected.InstalledVersion);
+            var latest = update.LatestVersion;
+            if (!update.IsUpdateAvailable)
             {
+                var message = string.Equals(
+                    latest,
+                    selected.InstalledVersion,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? $"DSH {selected.InstalledVersion} 已是官方最新 Release。"
+                    : $"没有发现比当前 DSH {selected.InstalledVersion} " +
+                      $"发布时间更晚的官方 Release。\r\n\r\n" +
+                      $"官方最新可安装版本：{latest}";
                 MessageBox.Show(
-                    $"DSH {selected.InstalledVersion} \u5DF2\u662F\u6700\u65B0\u7248\u672C\u3002",
-                    "\u68C0\u67E5\u5E76\u66F4\u65B0\u5F53\u524D DSH",
+                    message,
+                    "检查并更新当前 DSH",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 return;
             }
 
+            var releaseTime = update.LatestPublishedAt?
+                .ToLocalTime()
+                .ToString("yyyy-MM-dd HH:mm") ?? "未知";
             if (MessageBox.Show(
-                    $"\u5C06\u5F53\u524D DSH \u4ECE {selected.InstalledVersion} \u66F4\u65B0\u5230 {latest}\uFF1F\r\n\r\n{selected.InstallRoot}",
+                    $"将当前 DSH 从 {selected.InstalledVersion} 更新到 {latest}？\r\n" +
+                    $"官方发布时间：{releaseTime}\r\n\r\n" +
+                    selected.InstallRoot,
                     "\u68C0\u67E5\u5E76\u66F4\u65B0\u5F53\u524D DSH",
                     MessageBoxButtons.OKCancel,
                     MessageBoxIcon.Question) != DialogResult.OK)
@@ -289,7 +304,9 @@ internal sealed class TrayApplicationContext : ApplicationContext
                 await _runtime.StopAsync();
             }
             var originalId = selected.Id;
-            var updated = await _npm.UpdateAsync(selected);
+            var updated = await _npm.UpdateToAsync(
+                selected,
+                latest);
             updated.Id = originalId;
             var index = _settings.Installations.FindIndex(item => item.Id == originalId);
             if (index >= 0) _settings.Installations[index] = updated;

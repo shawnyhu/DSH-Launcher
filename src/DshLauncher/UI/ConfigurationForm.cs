@@ -305,15 +305,36 @@ internal sealed class ConfigurationForm : Form
         try
         {
             SetBusy(true);
-            var latest = await _npm.GetLatestVersionAsync();
-            if (string.Equals(latest, selected.InstalledVersion, StringComparison.OrdinalIgnoreCase))
+            var update = await _npm.CheckForUpdateAsync(
+                selected.InstalledVersion);
+            var latest = update.LatestVersion;
+            if (!update.IsUpdateAvailable)
             {
-                MessageBox.Show(this, $"DSH {selected.InstalledVersion} \u5DF2\u662F\u6700\u65B0\u7248\u672C\u3002", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var message = string.Equals(
+                    latest,
+                    selected.InstalledVersion,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? $"DSH {selected.InstalledVersion} 已是官方最新 Release。"
+                    : $"没有发现比当前 DSH {selected.InstalledVersion} " +
+                      $"发布时间更晚的官方 Release。\r\n\r\n" +
+                      $"官方最新可安装版本：{latest}";
+                MessageBox.Show(
+                    this,
+                    message,
+                    Text,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
                 return;
             }
 
-            if (MessageBox.Show(this,
-                $"\u5C06\u6240\u9009 DSH \u4ECE {selected.InstalledVersion} \u66F4\u65B0\u5230 {latest}\uFF1F\r\n\r\n{selected.InstallRoot}",
+            var releaseTime = update.LatestPublishedAt?
+                .ToLocalTime()
+                .ToString("yyyy-MM-dd HH:mm") ?? "未知";
+            if (MessageBox.Show(
+                this,
+                $"将所选 DSH 从 {selected.InstalledVersion} 更新到 {latest}？\r\n" +
+                $"官方发布时间：{releaseTime}\r\n\r\n" +
+                selected.InstallRoot,
                 "\u68C0\u67E5\u5E76\u66F4\u65B0\u6240\u9009 DSH",
                 MessageBoxButtons.OKCancel,
                 MessageBoxIcon.Question) != DialogResult.OK) return;
@@ -323,7 +344,9 @@ internal sealed class ConfigurationForm : Form
             }
 
             var originalId = selected.Id;
-            var updated = await _npm.UpdateAsync(selected);
+            var updated = await _npm.UpdateToAsync(
+                selected,
+                latest);
             updated.Id = originalId;
             ReplaceInstallation(originalId, updated);
             await _store.SaveAsync(_settings);

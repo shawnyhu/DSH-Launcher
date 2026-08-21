@@ -40,6 +40,99 @@ internal static class SelfCheck
         }
 
         using var log = new AppLogger();
+        if (DshReleaseService.PackageVersionFromTag(
+                "dsh-v0.1.1-rc.1") == "0.1.1-rc.1")
+        {
+            Console.WriteLine(
+                "[OK] DSH GitHub release tags map to npm package versions.");
+        }
+        else
+        {
+            failures.Add("DSH release tag parsing failed.");
+        }
+
+        var sampleVersions = new[]
+        {
+            "0.1.0-rc.7",
+            "0.1.0-rc.8",
+            "0.1.1-rc.1"
+        };
+        var sampleDates = new Dictionary<string, DateTimeOffset>
+        {
+            ["0.1.0-rc.7"] = DateTimeOffset.Parse("2026-08-17T11:50:59Z"),
+            ["0.1.0-rc.8"] = DateTimeOffset.Parse("2026-08-19T15:41:29Z"),
+            ["0.1.1-rc.1"] = DateTimeOffset.Parse("2026-08-21T06:49:18Z")
+        };
+        var sampleReleases = new[]
+        {
+            new DshReleaseVersion(
+                "dsh-v0.1.1-rc.1",
+                "0.1.1-rc.1",
+                DateTimeOffset.Parse("2026-08-21T07:12:39Z")),
+            new DshReleaseVersion(
+                "dsh-v0.1.0-rc.8",
+                "0.1.0-rc.8",
+                DateTimeOffset.Parse("2026-08-19T15:37:57Z")),
+            new DshReleaseVersion(
+                "dsh-v0.1.0-rc.7",
+                "0.1.0-rc.7",
+                DateTimeOffset.Parse("2026-08-17T12:01:58Z"))
+        };
+        var sampleCatalog = NpmService.BuildVersionList(
+            sampleVersions,
+            sampleDates,
+            sampleReleases,
+            "0.1.0-rc.7");
+        if (sampleCatalog.Select(item => item.Version).SequenceEqual(
+                new[]
+                {
+                    "0.1.1-rc.1",
+                    "0.1.0-rc.8",
+                    "0.1.0-rc.7"
+                }) &&
+            sampleCatalog[0].IsLatest)
+        {
+            Console.WriteLine(
+                "[OK] DSH releases are ordered by official publish time.");
+        }
+        else
+        {
+            failures.Add("DSH release publish-time ordering failed.");
+        }
+
+        var cleanupParent = Path.Combine(
+            Path.GetTempPath(),
+            "DSHLauncher-SelfCheck-" + Guid.NewGuid().ToString("N"));
+        var cleanupRoot = Path.Combine(cleanupParent, "DSHLauncher");
+        try
+        {
+            var fakeVersion = Path.Combine(cleanupRoot, "v0.1.5");
+            Directory.CreateDirectory(fakeVersion);
+            File.WriteAllText(
+                Path.Combine(fakeVersion, "update.exe"),
+                "test");
+            if (!LauncherUpdateService.TryCleanupDownloadedUpdates(
+                    cleanupRoot,
+                    log) ||
+                Directory.Exists(cleanupRoot))
+            {
+                failures.Add("Downloaded updater cleanup failed.");
+            }
+            else
+            {
+                Console.WriteLine(
+                    "[OK] Downloaded updater cleanup is confined " +
+                    "to the temp directory.");
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(cleanupParent))
+            {
+                Directory.Delete(cleanupParent, true);
+            }
+        }
+
         var npm = new NpmService(new CommandRunner(), log);
         Console.WriteLine(npm.FindNode() is { } node
             ? "[OK] Node: " + node
