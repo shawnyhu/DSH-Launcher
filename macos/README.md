@@ -68,6 +68,6 @@ xcodebuild -project macos/DSHLauncher.xcodeproj \
 - 更新清单必须使用仓库内公钥对应的离线 Ed25519 私钥签名。
 - 不得把 macOS 资产附加到 `win-v*` Release，也不得把 Windows 资产附加到 `mac-v*` Release。
 
-`.github/workflows/macos-release.yml` 需要单独配置 macOS 证书、证书密码、临时 keychain 密码、Application/Installer 身份、Apple ID、Team ID、App 专用密码，以及与 `UpdatePublicKeys.json` 匹配的 Ed25519 私钥和 key ID。工作流会签名、提交公证、staple、重新计算更新哈希并只发布 Mac 资产；任一步失败都不会创建可被 Launcher 接受的更新清单。
+`.github/workflows/macos-release.yml` 只有在仓库变量 `MACOS_RELEASE_ENABLED=true` 时执行，并需要单独配置 macOS 证书、证书密码、临时 keychain 密码、Application/Installer 身份、Apple ID、Team ID、App 专用密码，以及与 `UpdatePublicKeys.json` 匹配的 Ed25519 私钥和 key ID。工作流会签名、提交公证、staple、重新计算更新哈希并只发布 Mac 资产；任一步失败都不会创建可被 Launcher 接受的更新清单。
 
 DSH Launcher 是社区项目，并非 DeepSeek 官方产品。鲸鱼资源仅用于表达本机 DSH 运行状态。
