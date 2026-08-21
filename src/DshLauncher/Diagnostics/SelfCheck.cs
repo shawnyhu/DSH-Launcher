@@ -51,6 +51,48 @@ internal static class SelfCheck
             failures.Add("DSH release tag parsing failed.");
         }
 
+        var canonicalWindowsTag =
+            LauncherUpdateService.TryParseWindowsReleaseTag(
+                "win-v0.1.9",
+                out var canonicalWindowsVersion,
+                out var canonicalIsLegacy);
+        var bridgeWindowsTag =
+            LauncherUpdateService.TryParseWindowsReleaseTag(
+                "v0.1.8",
+                out var bridgeWindowsVersion,
+                out var bridgeIsLegacy);
+        if (canonicalWindowsTag &&
+            canonicalWindowsVersion == new Version(0, 1, 9) &&
+            !canonicalIsLegacy &&
+            bridgeWindowsTag &&
+            bridgeWindowsVersion == new Version(0, 1, 8) &&
+            bridgeIsLegacy &&
+            !LauncherUpdateService.TryParseWindowsReleaseTag(
+                "mac-v9.0.0",
+                out _,
+                out _) &&
+            !LauncherUpdateService.TryParseWindowsReleaseTag(
+                "v0.1.9",
+                out _,
+                out _) &&
+            LauncherUpdateService.WindowsAssetName(
+                canonicalWindowsVersion,
+                false) ==
+            "DSHLauncher-Windows-Update-0.1.9-x64.exe" &&
+            LauncherUpdateService.WindowsAssetName(
+                bridgeWindowsVersion,
+                true) ==
+            "DSHLauncher-Update-0.1.8-x64.exe")
+        {
+            Console.WriteLine(
+                "[OK] Launcher updates enforce Windows tags, versions, " +
+                "architecture, and the v0.1.8 bridge.");
+        }
+        else
+        {
+            failures.Add("Launcher platform release filtering failed.");
+        }
+
         var sampleVersions = new[]
         {
             "0.1.0-rc.7",

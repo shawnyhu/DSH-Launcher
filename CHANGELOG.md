@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8 - 2026-08-21
+
+- Add a Windows-specific `win-v*` Launcher update channel.
+- Filter Launcher updates by platform tag, semantic version, x64 asset name, and draft state.
+- Keep `v0.1.8` as a one-time bridge for Launcher 0.1.7 and older clients.
+- Fall back to the official GitHub Releases Atom feed when the REST API is unavailable or rate-limited.
+- Ignore macOS `mac-v*` Releases in the Windows Launcher.
+
 ## 0.1.7 - 2026-08-21
 
 - Show a dedicated progress window while updating DSH or Launcher.
