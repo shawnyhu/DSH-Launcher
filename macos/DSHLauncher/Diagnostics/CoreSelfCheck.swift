@@ -14,6 +14,28 @@ public enum CoreSelfCheck {
         try check(normalized.port == 65_535, "port normalization")
         try check(normalized.selectedHomeID == normalized.homes[0].id, "selection normalization")
 
+        var persistentSelection = defaults
+        let firstInstallation = DSHInstallation(
+            name: "DSH A", scope: .managed, installRoot: "/tmp/dsh-a", packageRoot: "/tmp/dsh-a/package",
+            nodeExecutable: "/tmp/node", npmExecutable: "/tmp/npm", installedVersion: "1.0.0"
+        )
+        let secondInstallation = DSHInstallation(
+            name: "DSH B", scope: .global, installRoot: "/tmp/dsh-b", packageRoot: "/tmp/dsh-b/package",
+            nodeExecutable: "/tmp/node", npmExecutable: "/tmp/npm", installedVersion: "2.0.0"
+        )
+        let secondHome = DSHHomeEntry(name: "其他数据", path: "/Users/example/.dsh-other")
+        persistentSelection.installations = [firstInstallation, secondInstallation]
+        persistentSelection.selectedInstallationID = firstInstallation.id
+        persistentSelection.homes.append(secondHome)
+        persistentSelection.selectInstallation(nil)
+        persistentSelection.selectHome(nil)
+        try check(persistentSelection.selectedInstallationID == firstInstallation.id, "persistent package selection")
+        try check(persistentSelection.selectedHomeID == defaults.selectedHomeID, "persistent DSH_HOME selection")
+        persistentSelection.selectInstallation(secondInstallation.id)
+        persistentSelection.selectHome(secondHome.id)
+        try check(persistentSelection.selectedInstallationID == secondInstallation.id, "explicit package switch")
+        try check(persistentSelection.selectedHomeID == secondHome.id, "explicit DSH_HOME switch")
+
         let runtime22 = NodeRuntime(nodeExecutable: "/node", npmExecutable: "/npm", nodeVersion: "v22.19.0")
         let runtime24 = NodeRuntime(nodeExecutable: "/node", npmExecutable: "/npm", nodeVersion: "v24.0.0")
         let runtimeOld = NodeRuntime(nodeExecutable: "/node", npmExecutable: "/npm", nodeVersion: "v22.18.0")

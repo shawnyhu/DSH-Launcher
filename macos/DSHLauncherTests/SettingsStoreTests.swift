@@ -55,6 +55,43 @@ import Testing
     #expect(!AppPaths.isDescendant(URL(fileURLWithPath: "/tmp/DSHLauncher/runtimes-old"), of: root))
 }
 
+@Test func transientDeselectionKeepsCurrentInstallationAndHome() {
+    var settings = LauncherSettings.defaults(homeDirectory: URL(fileURLWithPath: "/Users/example"))
+    let firstInstallation = DSHInstallation(
+        name: "DSH A",
+        scope: .managed,
+        installRoot: "/tmp/dsh-a",
+        packageRoot: "/tmp/dsh-a/package",
+        nodeExecutable: "/tmp/node",
+        npmExecutable: "/tmp/npm",
+        installedVersion: "1.0.0"
+    )
+    let secondInstallation = DSHInstallation(
+        name: "DSH B",
+        scope: .global,
+        installRoot: "/tmp/dsh-b",
+        packageRoot: "/tmp/dsh-b/package",
+        nodeExecutable: "/tmp/node",
+        npmExecutable: "/tmp/npm",
+        installedVersion: "2.0.0"
+    )
+    settings.installations = [firstInstallation, secondInstallation]
+    settings.selectedInstallationID = firstInstallation.id
+    let firstHome = settings.homes[0]
+    let secondHome = DSHHomeEntry(name: "其他数据", path: "/Users/example/.dsh-other")
+    settings.homes.append(secondHome)
+
+    settings.selectInstallation(nil)
+    settings.selectHome(nil)
+    #expect(settings.selectedInstallationID == firstInstallation.id)
+    #expect(settings.selectedHomeID == firstHome.id)
+
+    settings.selectInstallation(secondInstallation.id)
+    settings.selectHome(secondHome.id)
+    #expect(settings.selectedInstallationID == secondInstallation.id)
+    #expect(settings.selectedHomeID == secondHome.id)
+}
+
 private func makeFixture() throws -> (root: URL, home: URL, layout: AppPathLayout) {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent("DSHLauncherTests-\(UUID().uuidString)")
     let home = root.appendingPathComponent("home", isDirectory: true)

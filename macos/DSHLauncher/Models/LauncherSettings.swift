@@ -64,6 +64,16 @@ struct LauncherSettings: Codable, Equatable, Sendable {
         homes.first { $0.id == selectedHomeID }
     }
 
+    mutating func selectInstallation(_ id: UUID?) {
+        guard let id, installations.contains(where: { $0.id == id }) else { return }
+        selectedInstallationID = id
+    }
+
+    mutating func selectHome(_ id: UUID?) {
+        guard let id, homes.contains(where: { $0.id == id }) else { return }
+        selectedHomeID = id
+    }
+
     func normalized(homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser) -> Self {
         var value = self
         if value.homes.isEmpty {

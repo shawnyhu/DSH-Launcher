@@ -157,7 +157,11 @@ final class AppModel: ObservableObject {
     func updateSelectedInstallation() async {
         guard let selected = settings.selectedInstallation else { return }
         await refreshVersions()
-        guard let latest = availableVersions.first(where: \ .isLatest), latest.version != selected.installedVersion else { return }
+        guard let latest = availableVersions.first(where: \ .isLatest) else { return }
+        guard latest.version != selected.installedVersion else {
+            presentedError = "所选 DSH \(selected.installedVersion) 已是 npm latest。"
+            return
+        }
         let wasRunning: Bool
         if case .launcherOwned = ownership { wasRunning = true } else { wasRunning = false }
         if wasRunning { await stopDSH() }
@@ -170,6 +174,26 @@ final class AppModel: ObservableObject {
             updated.id = selected.id
             if let index = settings.installations.firstIndex(where: { $0.id == selected.id }) {
                 settings.installations[index] = updated
+            }
+            try await store.save(settings)
+        }
+        if wasRunning { await startDSH(openBrowser: false) }
+    }
+
+    func reinstallSelectedInstallation() async {
+        guard let selected = settings.selectedInstallation else { return }
+        let wasRunning: Bool
+        if case .launcherOwned = ownership { wasRunning = true } else { wasRunning = false }
+        if wasRunning { await stopDSH() }
+        await perform(stage: "正在重新安装 DSH \(selected.installedVersion)…") {
+            var reinstalled = try await npm.install(
+                scope: selected.scope,
+                root: selected.scope == .managed ? URL(fileURLWithPath: selected.installRoot) : nil,
+                version: selected.installedVersion
+            )
+            reinstalled.id = selected.id
+            if let index = settings.installations.firstIndex(where: { $0.id == selected.id }) {
+                settings.installations[index] = reinstalled
             }
             try await store.save(settings)
         }
@@ -201,7 +225,7 @@ final class AppModel: ObservableObject {
     }
 
     func addHome(_ url: URL) {
-        let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+        let canonical = canonicalHomeURL(url.path)
         if let existing = settings.homes.first(where: { $0.path == canonical.path }) {
             settings.selectedHomeID = existing.id
             return
@@ -211,10 +235,43 @@ final class AppModel: ObservableObject {
         settings.selectedHomeID = home.id
     }
 
+    @discardableResult
+    func updateHome(id: UUID, name: String, path: String) -> Bool {
+        guard let index = settings.homes.firstIndex(where: { $0.id == id }) else { return false }
+        let canonical = canonicalHomeURL(path)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: canonical.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            presentedError = "DSH_HOME 必须是已经存在的目录。"
+            return false
+        }
+        guard !settings.homes.contains(where: { $0.id != id && $0.path == canonical.path }) else {
+            presentedError = "该 DSH_HOME 已经在列表中。"
+            return false
+        }
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pathChanged = settings.homes[index].path != canonical.path
+        settings.homes[index].name = trimmedName.isEmpty ? canonical.lastPathComponent : trimmedName
+        settings.homes[index].path = canonical.path
+        if pathChanged {
+            settings.homes[index].lastObservedWriterVersion = nil
+            settings.homes[index].lastObservedWriteAt = nil
+            settings.homes[index].observationReliable = false
+        }
+        settings.selectedHomeID = id
+        return true
+    }
+
     func removeSelectedHome() {
         guard settings.homes.count > 1, let id = settings.selectedHomeID else { return }
         settings.homes.removeAll { $0.id == id }
         settings.selectedHomeID = settings.homes[0].id
+    }
+
+    private func canonicalHomeURL(_ path: String) -> URL {
+        let expanded = NSString(string: path.trimmingCharacters(in: .whitespacesAndNewlines)).expandingTildeInPath
+        return URL(fileURLWithPath: expanded, isDirectory: true)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
     }
 
     private func restartRuntime() async throws -> RuntimeOwnership {
